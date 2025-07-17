@@ -4,55 +4,114 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/white"
+    android:gravity="center"
     android:orientation="vertical"
     android:padding="16dp"
-    android:gravity="center"
     tools:context=".MainActivity">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
         android:text="GTR 2e App"
         android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="32dp" />
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/tv_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
         android:text="Disconnected"
-        android:textSize="16sp"
-        android:layout_marginBottom="16dp" />
+        android:textSize="16sp" />
 
     <TextView
         android:id="@+id/tv_device_info"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
         android:text="No device connected"
-        android:textSize="14sp"
-        android:layout_marginBottom="32dp" />
+        android:textSize="14sp" />
 
     <Button
         android:id="@+id/btn_connect"
         android:layout_width="200dp"
         android:layout_height="wrap_content"
-        android:text="Connect"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="16dp"
+        android:text="Connect" />
 
     <Button
         android:id="@+id/btn_refresh"
         android:layout_width="200dp"
         android:layout_height="wrap_content"
-        android:text="Refresh Battery"
+        android:layout_marginBottom="16dp"
         android:enabled="false"
-        android:layout_marginBottom="16dp" />
+        android:text="Refresh Battery" />
 
     <Button
         android:id="@+id/btn_test"
         android:layout_width="200dp"
         android:layout_height="wrap_content"
-        android:text="Test Functions"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="16dp"
+        android:text="Test Functions" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="300dp"
+        android:layout_height="300dp">
+
+        <ImageView
+            android:id="@+id/imageView3"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@android:color/transparent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/gtr_bg"
+            tools:srcCompat="@drawable/gtr_bg" />
+
+        <com.mikhaellopez.circularprogressbar.CircularProgressBar
+            android:id="@+id/watchBatteryProgress"
+            android:layout_width="130dp"
+            android:layout_height="wrap_content"
+            app:cpb_background_progressbar_color="@color/black"
+            app:cpb_progress="80"
+            app:cpb_progress_max="100"
+            app:cpb_progressbar_color="#12FA89"
+            app:cpb_progressbar_width="5dp"
+            app:cpb_round_border="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/batteryPercentLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:fontFamily="sans-serif"
+            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:textColor="#1BBF20"
+            android:textSize="8sp"
+            app:layout_constraintBottom_toBottomOf="@+id/watchBatteryProgress"
+            app:layout_constraintEnd_toEndOf="@+id/watchBatteryProgress"
+            app:layout_constraintStart_toStartOf="@+id/watchBatteryProgress"
+            tools:text="100%" />
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#00F4F4F4"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/gtr_bezel" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </LinearLayout>

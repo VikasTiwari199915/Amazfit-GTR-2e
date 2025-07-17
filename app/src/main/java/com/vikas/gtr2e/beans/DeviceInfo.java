@@ -164,9 +164,15 @@ public class DeviceInfo {
     }
 
     public void updateBatteryInfo(HuamiBatteryInfo batteryInfo) {
-        this.batteryPercentage = batteryInfo.getLevelInPercent();
-        this.chargingStatus = batteryInfo.isCharging() ? "Charging" : "Not Charging";
-        this.batteryStatus = batteryInfo.getStateString();
+        if(batteryInfo!=null) {
+            this.batteryPercentage = batteryInfo.getLevelInPercent();
+            this.chargingStatus = batteryInfo.isCharging() ? "Charging" : "Not Charging";
+            this.batteryStatus = batteryInfo.getStateString();
+        } else {
+            this.batteryStatus = "N/A";
+            this.batteryPercentage = 0;
+            this.chargingStatus = "N/A";
+        }
     }
 
     private String getNullSafeValue(String value) {

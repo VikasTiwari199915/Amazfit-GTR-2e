@@ -1,5 +1,8 @@
 package com.vikas.gtr2e.ble;
 
+import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_INDICATE;
+import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_NOTIFY;
+
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -13,8 +16,12 @@ import android.content.Context;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
+import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.UUID;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -36,12 +43,14 @@ public class GTR2eBleService {
         (byte)0x7b, (byte)0x61, (byte)0x74, (byte)0x84
     };
     private boolean isAuthenticated = false;
-    private Context context;
-    private BluetoothAdapter bluetoothAdapter;
+    private final Context context;
+    private final BluetoothAdapter bluetoothAdapter;
     private BluetoothGatt gatt;
     private ConnectionCallback connectionCallback;
     private boolean isConnected = false;
-    private boolean pendingStartAuth = false;
+
+    private final Queue<Runnable> bleOperations = new LinkedList<>();
+    private boolean isBleBusy = false;
 
     public interface ConnectionCallback {
         void onDeviceConnected(BluetoothDevice device);
@@ -130,26 +139,45 @@ public class GTR2eBleService {
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+
             Log.d(TAG, "onServicesDiscovered: status=" + status);
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                BluetoothGattService fee1Service = gatt.getService(AUTH_SERVICE_UUID);
-                if (fee1Service != null) {
-                    BluetoothGattCharacteristic authChar = fee1Service.getCharacteristic(AUTH_CHARACTERISTIC_UUID);
-                    if (authChar != null) {
-                        logAllDescriptors(authChar);
-                        logCharacteristicProperties(authChar);
-                        enableAuthNotification();
-                    } else {
-                        Log.e(TAG, "AUTH characteristic not found");
-                        if (connectionCallback != null) connectionCallback.onError("AUTH characteristic not found");
+                Log.d(TAG, "Services discovered");
+                if(isAuthenticated) {
+                    for (BluetoothGattService service : gatt.getServices()) {
+                        Log.d(TAG, "Service found: " + BleNamesResolver.resolveServiceName(service.getUuid().toString()));
+                        for (BluetoothGattCharacteristic characteristic : service.getCharacteristics()) {
+                            Log.d(TAG, "Characteristic found: " + BleNamesResolver.resolveCharacteristicName(characteristic.getUuid().toString()));
+                            if (BleNamesResolver.mCharacteristics.containsKey(characteristic.getUuid().toString())) {
+                                Log.d(TAG, "Trying to read characteristic, authenticated: " + isAuthenticated + ", name: " + BleNamesResolver.resolveCharacteristicName(characteristic.getUuid().toString()));
+                                enqueueReadCharacteristic(service.getUuid(),characteristic.getUuid());
+                            }
+                        }
                     }
-                } else {
-                    Log.e(TAG, "FEE1 service not found");
-                    if (connectionCallback != null) connectionCallback.onError("FEE1 service not found");
+                }
+                if(!isAuthenticated){
+                    BluetoothGattService fee1Service = gatt.getService(AUTH_SERVICE_UUID);
+                    if (fee1Service != null) {
+                        BluetoothGattCharacteristic authChar = fee1Service.getCharacteristic(AUTH_CHARACTERISTIC_UUID);
+                        if (authChar != null) {
+                            startAuthChallenge1stStep();
+                        } else {
+                            Log.e(TAG, "AUTH characteristic not found");
+                            if (connectionCallback != null) connectionCallback.onError("AUTH characteristic not found");
+                        }
+                    } else {
+                        Log.e(TAG, "FEE1 service not found");
+                        if (connectionCallback != null) connectionCallback.onError("FEE1 service not found");
+                    }
                 }
             } else {
                 Log.e(TAG, "Service discovery failed: " + status);
                 if (connectionCallback != null) connectionCallback.onError("Service discovery failed: " + status);
+            }
+
+
+            if(isAuthenticated) {
+                onOperationComplete();
             }
         }
 
@@ -158,11 +186,14 @@ public class GTR2eBleService {
             Log.d(TAG, "onDescriptorWrite: uuid=" + descriptor.getUuid() + ", status=" + status +", value="+ Arrays.toString(descriptor.getValue()));
             if (descriptor.getCharacteristic().getUuid().equals(AUTH_CHARACTERISTIC_UUID)) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    sendInitialAuthRequest();
+                    sendInitialAuthRequest2ndStep();
                 } else {
                     Log.e(TAG, "Failed to enable notifications for AUTH characteristic!");
                     if (connectionCallback != null) connectionCallback.onError("Failed to enable notifications for AUTH characteristic");
                 }
+            }
+            if(isAuthenticated) {
+                onOperationComplete();
             }
         }
 
@@ -170,10 +201,13 @@ public class GTR2eBleService {
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             Log.e("ON_CHARACTERISTIC_CHANGED","Characteristic changed :: "+BleNamesResolver.resolveCharacteristicName(characteristic.getUuid().toString()));
             if (characteristic.getUuid().equals(AUTH_CHARACTERISTIC_UUID)) {
-                handleAuthNotification(characteristic.getValue());
+                handleAuthNotification3rdStep(characteristic.getValue());
             } else {
                 Log.e(TAG, "Unknown characteristic changed: " + BleNamesResolver.resolveCharacteristicName(characteristic.getUuid().toString()));
                 InfoHandler.onInfoReceived(characteristic, characteristic.getValue(), connectionCallback);
+            }
+            if(isAuthenticated) {
+                onOperationComplete();
             }
         }
 
@@ -185,6 +219,9 @@ public class GTR2eBleService {
                     Log.e(TAG, "Auth write failed, status: " + status);
                 }
             }
+            if(isAuthenticated) {
+                onOperationComplete();
+            }
         }
 
         @Override
@@ -192,24 +229,15 @@ public class GTR2eBleService {
             super.onCharacteristicRead(gatt, characteristic, value, status);
             Log.e("On characteristic read","Characteristic changed :: "+BleNamesResolver.resolveCharacteristicName(characteristic.getUuid().toString()));
             InfoHandler.onInfoReceived(characteristic, value, connectionCallback);
+            if(isAuthenticated) {
+                onOperationComplete();
+            }
         }
     };
 
-    private void enableAuthNotification() {
-        BluetoothGattService authServiceUuid = gatt.getService(AUTH_SERVICE_UUID);
-        if (authServiceUuid == null) {
-            Log.e(TAG, "FEE1 service not found!");
-            return;
-        }
-        BluetoothGattCharacteristic authChar = authServiceUuid.getCharacteristic(AUTH_CHARACTERISTIC_UUID);
-        if (authChar == null) {
-            Log.e(TAG, "Auth characteristic not found!");
-            return;
-        }
-        startAuthChallenge();
-    }
 
-    private void startAuthChallenge() {
+    //region AUTH PROCESS
+    private void startAuthChallenge1stStep() {
         Log.d(TAG, "[AUTH] Starting auth challenge (Gadgetbridge style)");
         BluetoothGattService fee1Service = gatt.getService(AUTH_SERVICE_UUID);
         if (fee1Service == null) {
@@ -230,48 +258,10 @@ public class GTR2eBleService {
             return;
         }
 
-        // Set up notification listener first
-        if (!gatt.setCharacteristicNotification(authChar, true)) {
-            Log.e(TAG, "Failed to set notification for auth characteristic");
-            return;
-        }
-
-        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-        if (!gatt.writeDescriptor(descriptor)) {
-            Log.e(TAG, "Failed to write notification descriptor");
-            return;
-        }
-
-
-        //Chunked notification
-        BluetoothGattService huamiService = gatt.getService(HUAMI_SERVICE_UUID);
-        if (huamiService == null) {
-            Log.e(TAG, "[AUTH] huami service not found");
-            return;
-        }
-
-        BluetoothGattCharacteristic chunkedReadChar = huamiService.getCharacteristic(CHUNKED_READ_UUID);
-        if (chunkedReadChar == null) {
-            Log.e(TAG, "[AUTH] chunkedReadChar characteristic not found for auth challenge");
-            return;
-        }
-
-        BluetoothGattDescriptor ChunkedReadDescriptor = chunkedReadChar.getDescriptor(AUTH_CHARACTERISTIC_DESCRIPTOR_UUID);
-        if (ChunkedReadDescriptor == null) {
-            Log.e(TAG, "chunkedReadChar descriptor not found");
-            return;
-        }
-
-
-        if (!gatt.setCharacteristicNotification(chunkedReadChar, true)) {
-            Log.e(TAG, "Failed to set notification for chunkedReadChar characteristic");
-            return;
-        }
-
-        pendingStartAuth = true;
+        enableNotifications(authChar);
     }
 
-    private void sendInitialAuthRequest() {
+    private void sendInitialAuthRequest2ndStep() {
         BluetoothGattService fee1Service = gatt.getService(AUTH_SERVICE_UUID);
         BluetoothGattCharacteristic authChar = fee1Service.getCharacteristic(AUTH_CHARACTERISTIC_UUID);
 
@@ -287,7 +277,7 @@ public class GTR2eBleService {
         }
     }
 
-    private void handleAuthNotification(byte[] value) {
+    private void handleAuthNotification3rdStep(byte[] value) {
         if (value == null || value.length < 3) {
             Log.e(TAG, "Invalid auth notification");
             return;
@@ -322,7 +312,7 @@ public class GTR2eBleService {
                     if (connectionCallback != null) {
                         connectionCallback.onAuthenticated();
                     }
-                    enableDataNotifications();
+                    startOperationsAfterAuth();
                 } else {
                     Log.e(TAG, "Authentication failed");
                 }
@@ -333,8 +323,36 @@ public class GTR2eBleService {
         }
     }
 
-    private void enableDataNotifications() {
-        gatt.readCharacteristic(gatt.getService(HUAMI_SERVICE_UUID).getCharacteristic(HuamiService.UUID_CHARACTERISTIC_6_BATTERY_INFO));
+    //end region
+
+    private void startOperationsAfterAuth() {
+        if(gatt == null) return;
+        enqueueBleOperation(()->gatt.discoverServices(), "Discover Services");
+        //enqueueReadCharacteristic(HUAMI_SERVICE_UUID,HuamiService.UUID_CHARACTERISTIC_6_BATTERY_INFO);
+        enableNotifications(gatt.getService(HUAMI_SERVICE_UUID).getCharacteristic(HuamiService.UUID_CHARACTERISTIC_6_BATTERY_INFO));
+        //enqueueReadCharacteristic(UUID.fromString("00001800-0000-1000-8000-00805f9b34fb"),UUID.fromString("00002a00-0000-1000-8000-00805f9b34fb"));
+    }
+
+    private void enqueueReadCharacteristic(UUID serviceUuid, UUID characteristicUuid) {
+        if(gatt==null){
+            Log.e(TAG,"Gatt is null");
+            return;
+        }
+        if(gatt.getService(serviceUuid)==null){
+            Log.e(TAG,"Service is null");
+            return;
+        }
+        BluetoothGattService service = gatt.getService(serviceUuid);
+        BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicUuid);
+        if(characteristic==null){
+            Log.e(TAG,"Characteristic is null");
+            return;
+        }
+        if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_READ) != 0) {
+            enqueueBleOperation(() -> gatt.readCharacteristic(characteristic), "Read Characteristic");
+        } else {
+            Log.e(TAG, "Characteristic is not readable");
+        }
     }
 
     private void sendEncryptedResponse(byte[] encrypted) {
@@ -360,7 +378,7 @@ public class GTR2eBleService {
     private byte[] encryptWithKey(byte[] data, byte[] key) {
         try {
             SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
-            Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+            @SuppressLint("GetInstance") Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
             return cipher.doFinal(data);
         } catch (Exception e) {
@@ -377,23 +395,49 @@ public class GTR2eBleService {
         return sb.toString().trim();
     }
 
-    // Utility: Log all descriptors for a characteristic
-    private void logAllDescriptors(BluetoothGattCharacteristic characteristic) {
-        if (characteristic == null) {
-            Log.e(TAG, "[DEBUG] logAllDescriptors: characteristic is null");
-            return;
-        }
-        for (BluetoothGattDescriptor desc : characteristic.getDescriptors()) {
-            Log.d(TAG, "[DEBUG] Descriptor found: " + desc.getUuid());
+    private void enqueueBleOperation(Runnable operation, @Nullable String desc) {
+        synchronized (bleOperations) {
+            bleOperations.add(operation);
+            Log.e(TAG, MessageFormat.format("Added operation to queue[{0}], size: {1}",desc,bleOperations.size()));
+            if (!isBleBusy) {
+                processNextOperation();
+            }
         }
     }
 
-    // Utility: Log characteristic properties
-    private void logCharacteristicProperties(BluetoothGattCharacteristic characteristic) {
-        if (characteristic == null) {
-            Log.e(TAG, "[DEBUG] logCharacteristicProperties: characteristic is null");
-            return;
+    private void processNextOperation() {
+        synchronized (bleOperations) {
+            if (!bleOperations.isEmpty()) {
+                Log.d(TAG, "Processing next operation, remaining: " + bleOperations.size());
+                isBleBusy = true;
+                Runnable op = bleOperations.poll();
+                if (op != null) {
+                    op.run();
+                } else {
+                    Log.e(TAG,"Enqueued operation is null, skipping");
+                    processNextOperation();
+                }
+            } else {
+                isBleBusy = false;
+                Log.d(TAG, "No more operations to process");
+            }
         }
-        Log.d(TAG, "[DEBUG] Characteristic properties: " + characteristic.getProperties());
+    }
+
+    private void onOperationComplete() {
+        processNextOperation(); // Trigger next in queue
+    }
+
+    private void enableNotifications(BluetoothGattCharacteristic characteristic) {
+        int properties = characteristic.getProperties();
+        gatt.setCharacteristicNotification(characteristic, true);
+        for (BluetoothGattDescriptor descriptor :characteristic.getDescriptors()) {
+            if ((properties & PROPERTY_NOTIFY) != 0) {
+                descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+            } else if ((properties & PROPERTY_INDICATE) != 0) {
+                descriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
+            }
+            enqueueBleOperation(()->gatt.writeDescriptor(descriptor), "Write descriptor");
+        }
     }
 } 

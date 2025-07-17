@@ -26,8 +26,8 @@ import android.util.SparseArray;
 import java.util.HashMap;
 
 public class BleNamesResolver {
-    private static HashMap<String, String> mServices = new HashMap<>(100);
-    private static HashMap<String, String> mCharacteristics = new HashMap<>(600);
+    public static HashMap<String, String> mServices = new HashMap<>(100);
+    public static HashMap<String, String> mCharacteristics = new HashMap<>(600);
     private static SparseArray<String> mValueFormats = new SparseArray<>(10);
     private static SparseArray<String> mAppearance = new SparseArray<>(20);
     private static SparseArray<String> mHeartRateSensorLocation = new SparseArray<>(10);

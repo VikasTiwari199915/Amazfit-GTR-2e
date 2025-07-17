@@ -10,6 +10,7 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -19,6 +20,7 @@ import androidx.core.content.ContextCompat;
 import android.util.Log;
 
 import com.vikas.gtr2e.beans.DeviceInfo;
+import com.vikas.gtr2e.databinding.ActivityMainBinding;
 
 import java.text.MessageFormat;
 
@@ -26,21 +28,18 @@ public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_CODE = 1;
     private static final int BLUETOOTH_REQUEST_CODE = 2;
 
-    private Button btnConnect;
-    private Button btnRefresh;
-    private Button btnTest;
-    private TextView tvStatus;
-    private TextView tvDeviceInfo;
-
     private BluetoothAdapter bluetoothAdapter;
     private GTR2eManager gtr2eManager;
 
     private final DeviceInfo deviceInfo = new DeviceInfo();
 
+    ActivityMainBinding binding;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
         initViews();
         initBluetooth();
@@ -49,15 +48,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        btnConnect = findViewById(R.id.btn_connect);
-        btnRefresh = findViewById(R.id.btn_refresh);
-        btnTest = findViewById(R.id.btn_test);
-        tvStatus = findViewById(R.id.tv_status);
-        tvDeviceInfo = findViewById(R.id.tv_device_info);
-
-        btnConnect.setOnClickListener(v -> connectToDevice());
-        btnRefresh.setOnClickListener(v -> refreshBattery());
-        btnTest.setOnClickListener(v -> launchTestActivity());
+        binding.btnConnect.setOnClickListener(v -> connectToDevice());
+        binding.btnRefresh.setOnClickListener(v -> refreshBattery());
+        binding.btnTest.setOnClickListener(v -> launchTestActivity());
+        binding.watchBatteryProgress.setProgress(0f);
     }
 
     private void initBluetooth() {
@@ -73,18 +67,23 @@ public class MainActivity extends AppCompatActivity {
             public void onConnectedChanged(boolean connected) {
                 if(connected) {
                     runOnUiThread(() -> {
-                        tvStatus.setText("Connected to GTR 2e");
-                        btnConnect.setText("Disconnect");
+                        binding.tvStatus.setText("Connected to GTR 2e");
+                        binding.btnConnect.setText("Disconnect");
                         deviceInfo.setConnected(true);
                     });
                 } else {
                     Log.d("MainActivity", "onDisconnected() called");
                     runOnUiThread(() -> {
-                        tvStatus.setText("Disconnected");
-                        btnConnect.setText("Connect");
-                        btnRefresh.setEnabled(false);
-                        tvDeviceInfo.setText("No device connected");
+                        binding.tvStatus.setText("Disconnected");
+                        binding.btnConnect.setText("Connect");
+                        binding.btnRefresh.setEnabled(false);
+                        binding.tvDeviceInfo.setText("No device connected");
                         deviceInfo.setConnected(false);
+                        deviceInfo.setAuthenticated(false);
+                        deviceInfo.updateBatteryInfo(null);
+                        binding.batteryPercentLabel.setText("0%");
+                        binding.watchBatteryProgress.setProgress(0f);
+                        binding.batteryPercentLabel.setVisibility(View.INVISIBLE);
                     });
                 }
             }
@@ -92,8 +91,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onAuthenticated() {
                 runOnUiThread(() -> {
-                    tvStatus.setText("Connected & Authenticated");
-                    btnRefresh.setEnabled(true);
+                    binding.tvStatus.setText("Connected & Authenticated");
+                    binding.btnRefresh.setEnabled(true);
                     deviceInfo.setAuthenticated(true);
                     Toast.makeText(MainActivity.this, "Authentication successful!", Toast.LENGTH_SHORT).show();
                     updateDeviceInfo();
@@ -111,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onError(String error) {
                 runOnUiThread(() -> {
-                    tvStatus.setText(MessageFormat.format("Error: {0}", error));
+                    binding.tvStatus.setText(MessageFormat.format("Error: {0}", error));
                     Toast.makeText(MainActivity.this, error, Toast.LENGTH_SHORT).show();
                 });
             }
@@ -176,7 +175,16 @@ public class MainActivity extends AppCompatActivity {
             info.append("Battery: ").append(deviceInfo.getBatteryPercentage()).append("%\n");
             info.append("Charging: ").append(deviceInfo.getChargingStatus()).append("\n");
             info.append("Authenticated: ").append(deviceInfo.isAuthenticated() ? "Yes" : "No");
-            tvDeviceInfo.setText(info.toString());
+            binding.watchBatteryProgress.setProgress(deviceInfo.getBatteryPercentage());
+            binding.batteryPercentLabel.setText(MessageFormat.format("{0}%", deviceInfo.getBatteryPercentage()));
+            binding.batteryPercentLabel.setVisibility(View.VISIBLE);
+            binding.tvDeviceInfo.setText(info.toString());
+        } else {
+            binding.tvDeviceInfo.setText("No device connected");
+            binding.btnRefresh.setEnabled(false);
+            binding.watchBatteryProgress.setProgress(0f);
+            binding.batteryPercentLabel.setText("0%");
+            binding.tvStatus.setText("Disconnected");
         }
     }
     
