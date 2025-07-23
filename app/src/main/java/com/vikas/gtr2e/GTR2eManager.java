@@ -14,7 +14,35 @@ public class GTR2eManager {
     
     private boolean isConnected = false;
     private boolean isAuthenticated = false;
-    
+
+    public void performAction(String actionCode, String... args) {
+        if(actionCode==null) return;
+        switch (actionCode) {
+            case "DO_NOT_DISTURB_ON":
+//                bleService.enableDoNotDisturb();
+                bleService.sendReboot();
+                break;
+            case "HEART_RATE_MONITORING_ON":
+//                bleService.heartRateMonitoring(true);
+                bleService.continuousHeartRateMonitoring(true);
+//                bleService.liftWristToWake(true);
+                break;
+            case "HEART_RATE_MONITORING_OFF":
+//                bleService.heartRateMonitoring(false);
+                bleService.continuousHeartRateMonitoring(false);
+//                bleService.liftWristToWake(false);
+                break;
+            case "FIND_WATCH_START":
+                bleService.sendFindDeviceCommand(true);
+                break;
+            case "SET_PHONE_VOLUME":
+                bleService.onSetPhoneVolume(Float.parseFloat(args[0]));
+                break;
+            default:
+                break;
+        }
+    }
+
     public interface ConnectionListener {
         void onConnectedChanged(boolean connected);
         void onAuthenticated();

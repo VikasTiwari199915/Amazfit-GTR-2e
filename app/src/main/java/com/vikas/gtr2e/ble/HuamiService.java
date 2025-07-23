@@ -28,6 +28,8 @@ public class HuamiService {
 
 
     public static final String BASE_UUID = "0000%s-0000-1000-8000-00805f9b34fb";
+
+    public static final UUID UUID_CHARACTERISTIC_HEART_RATE_CONTROL_POINT = UUID.fromString((String.format(BASE_UUID, "2A39")));
     public static final UUID UUID_CHARACTERISTIC_REALTIME_STEPS = UUID.fromString(String.format(BASE_UUID, "FF06"));
     public static final UUID UUID_CHARACTERISTIC_HEART_RATE_MEASUREMENT = UUID.fromString((String.format(BASE_UUID, "2A37")));
     public static final UUID UUID_SERVICE_MIBAND_SERVICE = UUID.fromString(String.format(BASE_UUID, "FEE0"));

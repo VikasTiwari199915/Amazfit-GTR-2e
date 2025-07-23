@@ -15,6 +15,7 @@ public class DeviceInfo {
     int batteryPercentage;
     String batteryStatus;
     String chargingStatus;
+    boolean isCharging;
     String lastChargedOn;
     int lastKnownChargeLevel;
     boolean isAuthenticated;
@@ -141,6 +142,14 @@ public class DeviceInfo {
         isConnected = connected;
     }
 
+    public boolean isCharging() {
+        return isCharging;
+    }
+
+    public void setCharging(boolean charging) {
+        isCharging = charging;
+    }
+
     // toString method to provide a string representation of the object
     @NonNull
     @Override
@@ -168,10 +177,12 @@ public class DeviceInfo {
             this.batteryPercentage = batteryInfo.getLevelInPercent();
             this.chargingStatus = batteryInfo.isCharging() ? "Charging" : "Not Charging";
             this.batteryStatus = batteryInfo.getStateString();
+            this.isCharging = batteryInfo.isCharging();
         } else {
             this.batteryStatus = "N/A";
             this.batteryPercentage = 0;
             this.chargingStatus = "N/A";
+            this.isCharging = false;
         }
     }
 

@@ -1,5 +1,6 @@
 package com.vikas.gtr2e;
 
+import android.animation.ObjectAnimator;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,7 +12,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.Button;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -49,9 +52,33 @@ public class MainActivity extends AppCompatActivity {
 
     private void initViews() {
         binding.btnConnect.setOnClickListener(v -> connectToDevice());
-        binding.btnRefresh.setOnClickListener(v -> refreshBattery());
         binding.btnTest.setOnClickListener(v -> launchTestActivity());
         binding.watchBatteryProgress.setProgress(0f);
+        binding.doNotDisturbBtn.setOnClickListener(v->enableDoNotDisturb());
+        binding.heartRateMonitoringToggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                gtr2eManager.performAction("HEART_RATE_MONITORING_ON");
+            } else {
+                gtr2eManager.performAction("HEART_RATE_MONITORING_OFF");
+            }
+        });
+        binding.button2.setOnClickListener(v -> gtr2eManager.performAction("FIND_WATCH_START"));
+        binding.volumeBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                gtr2eManager.performAction("SET_PHONE_VOLUME", String.valueOf(progress));
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
     }
 
     private void initBluetooth() {
@@ -74,16 +101,11 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     Log.d("MainActivity", "onDisconnected() called");
                     runOnUiThread(() -> {
-                        binding.tvStatus.setText("Disconnected");
-                        binding.btnConnect.setText("Connect");
-                        binding.btnRefresh.setEnabled(false);
-                        binding.tvDeviceInfo.setText("No device connected");
                         deviceInfo.setConnected(false);
                         deviceInfo.setAuthenticated(false);
                         deviceInfo.updateBatteryInfo(null);
-                        binding.batteryPercentLabel.setText("0%");
-                        binding.watchBatteryProgress.setProgress(0f);
-                        binding.batteryPercentLabel.setVisibility(View.INVISIBLE);
+                        binding.btnConnect.setText("Connect");
+                        updateDeviceInfo();
                     });
                 }
             }
@@ -92,7 +114,6 @@ public class MainActivity extends AppCompatActivity {
             public void onAuthenticated() {
                 runOnUiThread(() -> {
                     binding.tvStatus.setText("Connected & Authenticated");
-                    binding.btnRefresh.setEnabled(true);
                     deviceInfo.setAuthenticated(true);
                     Toast.makeText(MainActivity.this, "Authentication successful!", Toast.LENGTH_SHORT).show();
                     updateDeviceInfo();
@@ -175,16 +196,22 @@ public class MainActivity extends AppCompatActivity {
             info.append("Battery: ").append(deviceInfo.getBatteryPercentage()).append("%\n");
             info.append("Charging: ").append(deviceInfo.getChargingStatus()).append("\n");
             info.append("Authenticated: ").append(deviceInfo.isAuthenticated() ? "Yes" : "No");
-            binding.watchBatteryProgress.setProgress(deviceInfo.getBatteryPercentage());
+            animateProgressBar(deviceInfo.getBatteryPercentage());
             binding.batteryPercentLabel.setText(MessageFormat.format("{0}%", deviceInfo.getBatteryPercentage()));
             binding.batteryPercentLabel.setVisibility(View.VISIBLE);
             binding.tvDeviceInfo.setText(info.toString());
+            if(deviceInfo.isCharging()) {
+                binding.chargingIndicatorImgView.setVisibility(View.VISIBLE);
+            } else {
+                binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
+            }
         } else {
             binding.tvDeviceInfo.setText("No device connected");
-            binding.btnRefresh.setEnabled(false);
-            binding.watchBatteryProgress.setProgress(0f);
+            animateProgressBar(0f);
+            binding.batteryPercentLabel.setVisibility(View.INVISIBLE);
             binding.batteryPercentLabel.setText("0%");
             binding.tvStatus.setText("Disconnected");
+            binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
         }
     }
     
@@ -192,6 +219,12 @@ public class MainActivity extends AppCompatActivity {
         if (gtr2eManager.isAuthenticated()) {
 //            gtr2eManager.refreshBatteryInfo();
             Toast.makeText(this, "Refreshing battery info...", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void enableDoNotDisturb(){
+        if(gtr2eManager.isAuthenticated() && gtr2eManager.isConnected()) {
+            gtr2eManager.performAction("DO_NOT_DISTURB_ON");
         }
     }
     
@@ -218,5 +251,13 @@ public class MainActivity extends AppCompatActivity {
         if (gtr2eManager != null) {
             gtr2eManager.disconnect();
         }
+    }
+
+    private void animateProgressBar(float newProgress) {
+        // Create an ObjectAnimator to animate the "progress" property
+        ObjectAnimator animator = ObjectAnimator.ofFloat(binding.watchBatteryProgress, "progress", binding.watchBatteryProgress.getProgress(), newProgress);
+        animator.setDuration(500); // Animation duration in milliseconds
+        animator.setInterpolator(new AccelerateDecelerateInterpolator()); // Optional: control animation speed
+        animator.start();
     }
 }

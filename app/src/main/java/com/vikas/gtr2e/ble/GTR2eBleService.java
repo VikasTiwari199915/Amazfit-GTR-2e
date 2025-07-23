@@ -3,6 +3,10 @@ package com.vikas.gtr2e.ble;
 import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_INDICATE;
 import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_NOTIFY;
 
+import static com.vikas.gtr2e.ble.HuamiService.COMMAND_DO_NOT_DISTURB_AUTOMATIC;
+import static com.vikas.gtr2e.ble.HuamiService.ENDPOINT_DISPLAY;
+import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_VOLUME;
+
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -13,6 +17,7 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
+import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -20,6 +25,7 @@ import androidx.annotation.Nullable;
 
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.UUID;
@@ -28,6 +34,7 @@ import javax.crypto.spec.SecretKeySpec;
 @SuppressLint("MissingPermission")
 public class GTR2eBleService {
     private static final String TAG = "GTR2eBleService";
+    HashMap<UUID, BluetoothGattCharacteristic> characteristicMap = new HashMap<>();
 
     // UUIDs for Huami protocol
     public static final UUID AUTH_SERVICE_UUID = UUID.fromString("0000fee1-0000-1000-8000-00805f9b34fb");
@@ -47,7 +54,16 @@ public class GTR2eBleService {
     private final BluetoothAdapter bluetoothAdapter;
     private BluetoothGatt gatt;
     private ConnectionCallback connectionCallback;
-    private boolean isConnected = false;
+
+    private Huami2021ChunkedEncoder huami2021ChunkedEncoder;
+    private Huami2021ChunkedDecoder huami2021ChunkedDecoder;
+
+    private BluetoothGattCharacteristic characteristicChunked2021Write;
+    private BluetoothGattCharacteristic characteristicChunked2021Read;
+
+
+    protected static final int MIN_MTU = 23;
+    private int mMTU = MIN_MTU;
 
     private final Queue<Runnable> bleOperations = new LinkedList<>();
     private boolean isBleBusy = false;
@@ -60,10 +76,18 @@ public class GTR2eBleService {
         void onBatteryDataReceived(byte[] batteryData);
     }
 
+    Huami2021Handler huami2021Handler = new Huami2021Handler() {
+        @Override
+        public void handle2021Payload(short type, byte[] payload) {
+            handleChunkedRead(payload);
+        }
+    };
+
     public GTR2eBleService(Context context) {
         this.context = context;
         BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
+        huami2021ChunkedDecoder = new Huami2021ChunkedDecoder(huami2021Handler, false);
     }
 
     public void setConnectionCallback(ConnectionCallback callback) {
@@ -74,7 +98,6 @@ public class GTR2eBleService {
     public void connect(BluetoothDevice device) {
 //        Log.d(TAG, "Connecting to device: " + device.getAddress());
         isAuthenticated = false;
-        isConnected = false;
         BluetoothDevice device1 =  bluetoothAdapter.getRemoteDevice("D9:B6:53:69:F2:F2");
         gatt = device1.connectGatt(context, false, gattCallback);
     }
@@ -90,7 +113,6 @@ public class GTR2eBleService {
             }
             gatt = null;
         }
-        isConnected = false;
         isAuthenticated = false;
         if (connectionCallback != null) {
             connectionCallback.onDeviceDisconnected();
@@ -104,21 +126,18 @@ public class GTR2eBleService {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 if (newState == BluetoothGatt.STATE_CONNECTED) {
                     Log.d(TAG, "Connected to GATT server, requesting MTU 247");
-                    isConnected = true;
                     gatt.requestMtu(247);
                     if (connectionCallback != null) {
                         connectionCallback.onDeviceConnected(gatt.getDevice());
                     }
                 } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
                     Log.d(TAG, "Disconnected from GATT server");
-                    isConnected = false;
                     if (connectionCallback != null) {
                         connectionCallback.onDeviceDisconnected();
                     }
                 }
             } else {
                 Log.e(TAG, "Connection state change failed: " + status);
-                isConnected = false;
                 if (connectionCallback != null) {
                     connectionCallback.onError("Connection failed: " + status);
                 }
@@ -135,6 +154,9 @@ public class GTR2eBleService {
             } else {
                 Log.e(TAG, "Failed to set MTU, status=" + status);
             }
+            if (huami2021ChunkedEncoder != null) {
+                huami2021ChunkedEncoder.setMTU(mtu);
+            }
         }
 
         @Override
@@ -144,18 +166,8 @@ public class GTR2eBleService {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 Log.d(TAG, "Services discovered");
                 if(isAuthenticated) {
-                    for (BluetoothGattService service : gatt.getServices()) {
-                        Log.d(TAG, "Service found: " + BleNamesResolver.resolveServiceName(service.getUuid().toString()));
-                        for (BluetoothGattCharacteristic characteristic : service.getCharacteristics()) {
-                            Log.d(TAG, "Characteristic found: " + BleNamesResolver.resolveCharacteristicName(characteristic.getUuid().toString()));
-                            if (BleNamesResolver.mCharacteristics.containsKey(characteristic.getUuid().toString())) {
-                                Log.d(TAG, "Trying to read characteristic, authenticated: " + isAuthenticated + ", name: " + BleNamesResolver.resolveCharacteristicName(characteristic.getUuid().toString()));
-                                enqueueReadCharacteristic(service.getUuid(),characteristic.getUuid());
-                            }
-                        }
-                    }
-                }
-                if(!isAuthenticated){
+                    handleDiscoveredServices(gatt);
+                } else {
                     BluetoothGattService fee1Service = gatt.getService(AUTH_SERVICE_UUID);
                     if (fee1Service != null) {
                         BluetoothGattCharacteristic authChar = fee1Service.getCharacteristic(AUTH_CHARACTERISTIC_UUID);
@@ -200,11 +212,17 @@ public class GTR2eBleService {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             Log.e("ON_CHARACTERISTIC_CHANGED","Characteristic changed :: "+BleNamesResolver.resolveCharacteristicName(characteristic.getUuid().toString()));
+            characteristicMap.put(characteristic.getUuid(), characteristic);
             if (characteristic.getUuid().equals(AUTH_CHARACTERISTIC_UUID)) {
                 handleAuthNotification3rdStep(characteristic.getValue());
             } else {
-                Log.e(TAG, "Unknown characteristic changed: " + BleNamesResolver.resolveCharacteristicName(characteristic.getUuid().toString()));
-                InfoHandler.onInfoReceived(characteristic, characteristic.getValue(), connectionCallback);
+                if(characteristic.getUuid().equals(HuamiService.UUID_CHARACTERISTIC_CHUNKEDTRANSFER_2021_READ)) {
+                    handleChunkedRead(characteristic.getValue());
+                } else if(characteristic.getUuid().equals(HuamiService.UUID_CHARACTERISTIC_CHUNKEDTRANSFER)) {
+                    handleChunkedRead(characteristic.getValue());
+                } else {
+                    InfoHandler.onInfoReceived(characteristic, characteristic.getValue(), connectionCallback, GTR2eBleService.this);
+                }
             }
             if(isAuthenticated) {
                 onOperationComplete();
@@ -228,12 +246,46 @@ public class GTR2eBleService {
         public void onCharacteristicRead(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value, int status) {
             super.onCharacteristicRead(gatt, characteristic, value, status);
             Log.e("On characteristic read","Characteristic changed :: "+BleNamesResolver.resolveCharacteristicName(characteristic.getUuid().toString()));
-            InfoHandler.onInfoReceived(characteristic, value, connectionCallback);
+            InfoHandler.onInfoReceived(characteristic, value, connectionCallback, GTR2eBleService.this);
             if(isAuthenticated) {
                 onOperationComplete();
             }
         }
     };
+
+    private void handleDiscoveredServices(BluetoothGatt gatt) {
+        for (BluetoothGattService service : gatt.getServices()) {
+            Log.d(TAG, "Service found: " + BleNamesResolver.resolveServiceName(service.getUuid().toString()));
+            for (BluetoothGattCharacteristic characteristic : service.getCharacteristics()) {
+                if(characteristic.getUuid() == HuamiService.UUID_CHARACTERISTIC_CHUNKEDTRANSFER_2021_READ) {
+                    characteristicChunked2021Read = characteristic;
+                    Log.e(TAG, "### characteristicChunked2021Read Set");
+                    if (characteristicChunked2021Read != null && huami2021ChunkedDecoder == null) {
+                        huami2021ChunkedDecoder = new Huami2021ChunkedDecoder(huami2021Handler, false);
+                    } else if (huami2021ChunkedDecoder != null) {
+                        huami2021ChunkedDecoder.reset();
+                    }
+                }
+                if(characteristic.getUuid() == HuamiService.UUID_CHARACTERISTIC_CHUNKEDTRANSFER_2021_WRITE) {
+                    characteristicChunked2021Write = characteristic;
+                    Log.e(TAG, "### characteristicChunked2021Write Set");
+                    if(characteristicChunked2021Write != null && huami2021ChunkedEncoder == null) {
+                        huami2021ChunkedEncoder = new Huami2021ChunkedEncoder(mMTU);
+                    } else if (huami2021ChunkedDecoder != null) {
+                        huami2021ChunkedEncoder.reset();
+                    }
+                }
+                Log.d(TAG, "Characteristic found: " + BleNamesResolver.resolveCharacteristicName(characteristic.getUuid().toString()));
+                characteristicMap.put(characteristic.getUuid(), characteristic);
+                if (characteristic.getProperties() != 0) {
+                    Log.d(TAG, "Trying to read characteristic, authenticated: " + isAuthenticated + ", name: " + BleNamesResolver.resolveCharacteristicName(characteristic.getUuid().toString()));
+                    enableNotifications(characteristic);
+                    enqueueReadCharacteristic(service.getUuid(),characteristic.getUuid());
+                }
+            }
+        }
+    }
+
 
 
     //region AUTH PROCESS
@@ -323,16 +375,48 @@ public class GTR2eBleService {
         }
     }
 
-    //end region
+    private void sendEncryptedResponse(byte[] encrypted) {
+        BluetoothGattService fee1Service = gatt.getService(AUTH_SERVICE_UUID);
+        if (fee1Service == null) return;
+
+        BluetoothGattCharacteristic authChar = fee1Service.getCharacteristic(AUTH_CHARACTERISTIC_UUID);
+        if (authChar == null) return;
+
+        // Format: 0x83 0x00 + 16 encrypted bytes
+        byte[] response = new byte[18];
+        response[0] = (byte)0x83;
+        response[1] = 0x00;
+        System.arraycopy(encrypted, 0, response, 2, 16);
+
+        authChar.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+        authChar.setValue(response);
+        if (!gatt.writeCharacteristic(authChar)) {
+            Log.e(TAG, "Failed to send encrypted response");
+        }
+    }
+
+    @SuppressWarnings("all")
+    private byte[] encryptWithKey(byte[] data, byte[] key) {
+        try {
+            SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
+            @SuppressLint("GetInstance") Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+            return cipher.doFinal(data);
+        } catch (Exception e) {
+            Log.e(TAG, "Encryption failed", e);
+            return new byte[16]; // Return zeros if encryption fails
+        }
+    }
+
+    // endregion
 
     private void startOperationsAfterAuth() {
         if(gatt == null) return;
         enqueueBleOperation(()->gatt.discoverServices(), "Discover Services");
-        //enqueueReadCharacteristic(HUAMI_SERVICE_UUID,HuamiService.UUID_CHARACTERISTIC_6_BATTERY_INFO);
         enableNotifications(gatt.getService(HUAMI_SERVICE_UUID).getCharacteristic(HuamiService.UUID_CHARACTERISTIC_6_BATTERY_INFO));
-        //enqueueReadCharacteristic(UUID.fromString("00001800-0000-1000-8000-00805f9b34fb"),UUID.fromString("00002a00-0000-1000-8000-00805f9b34fb"));
     }
 
+    //region QUEUE OPERATIONS HELPER METHODS
     private void enqueueReadCharacteristic(UUID serviceUuid, UUID characteristicUuid) {
         if(gatt==null){
             Log.e(TAG,"Gatt is null");
@@ -355,35 +439,21 @@ public class GTR2eBleService {
         }
     }
 
-    private void sendEncryptedResponse(byte[] encrypted) {
-        BluetoothGattService fee1Service = gatt.getService(AUTH_SERVICE_UUID);
-        if (fee1Service == null) return;
-
-        BluetoothGattCharacteristic authChar = fee1Service.getCharacteristic(AUTH_CHARACTERISTIC_UUID);
-        if (authChar == null) return;
-
-        // Format: 0x83 0x00 + 16 encrypted bytes
-        byte[] response = new byte[18];
-        response[0] = (byte)0x83;
-        response[1] = 0x00;
-        System.arraycopy(encrypted, 0, response, 2, 16);
-
-        authChar.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-        authChar.setValue(response);
-        if (!gatt.writeCharacteristic(authChar)) {
-            Log.e(TAG, "Failed to send encrypted response");
+    private void enqueueWriteCharacteristic(UUID characteristicUuid, byte[] value, @Nullable String desc) {
+        if(gatt==null){
+            Log.e(TAG,"Gatt is null, Writing \""+desc+"\" Aborted");
+            return;
         }
-    }
-
-    private byte[] encryptWithKey(byte[] data, byte[] key) {
-        try {
-            SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
-            @SuppressLint("GetInstance") Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-            return cipher.doFinal(data);
-        } catch (Exception e) {
-            Log.e(TAG, "Encryption failed", e);
-            return new byte[16]; // Return zeros if encryption fails
+        BluetoothGattCharacteristic characteristic = characteristicMap.get(characteristicUuid);
+        if(characteristic==null){
+            Log.e(TAG,"Characteristic is null, Writing \""+desc+"\" Aborted");
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            enqueueBleOperation(() -> gatt.writeCharacteristic(characteristic,value,characteristic.getWriteType()), desc!=null?desc:"Write Characteristic");
+        } else {
+            characteristic.setValue(value);
+            enqueueBleOperation(() -> gatt.writeCharacteristic(characteristic), "Write Characteristic");
         }
     }
 
@@ -434,10 +504,158 @@ public class GTR2eBleService {
         for (BluetoothGattDescriptor descriptor :characteristic.getDescriptors()) {
             if ((properties & PROPERTY_NOTIFY) != 0) {
                 descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                enqueueBleOperation(()->gatt.writeDescriptor(descriptor), "Write descriptor");
             } else if ((properties & PROPERTY_INDICATE) != 0) {
                 descriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
+                enqueueBleOperation(()->gatt.writeDescriptor(descriptor), "Write descriptor");
+            } else {
+                Log.e(TAG, "Characteristic does not support notifications or indications");
             }
-            enqueueBleOperation(()->gatt.writeDescriptor(descriptor), "Write descriptor");
         }
     }
-} 
+    //endregion
+
+    public void enableDoNotDisturb() {
+        //public static final byte[] COMMAND_DO_NOT_DISTURB_AUTOMATIC = new byte[] { ENDPOINT_DND, (byte) 0x83 };
+        byte[] cmd = COMMAND_DO_NOT_DISTURB_AUTOMATIC.clone();
+        cmd[1] &= ~0x80;
+        enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION, cmd, "Enable Do Not Disturb");
+    }
+
+    public void changeDateFormat(String dateFormat) {
+        byte[] cmd = HuamiService.DATEFORMAT_DATE_MM_DD_YYYY;
+        System.arraycopy(dateFormat.getBytes(), 0, cmd, 3, 10);
+        enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION, cmd, "Change Date Format");
+    }
+
+
+    public static final byte COMMAND_SET_HR_SLEEP = 0x0;
+    public static final byte COMMAND_SET__HR_CONTINUOUS = 0x1;
+    public static final byte COMMAND_SET_HR_MANUAL = 0x2;
+    private static final byte[] startHeartMeasurementManual = new byte[]{0x15, COMMAND_SET_HR_MANUAL, 1};
+    private static final byte[] stopHeartMeasurementManual = new byte[]{0x15, COMMAND_SET_HR_MANUAL, 0};
+    private static final byte[] startHeartMeasurementContinuous = new byte[]{0x15, COMMAND_SET__HR_CONTINUOUS, 1};
+    private static final byte[] stopHeartMeasurementContinuous = new byte[]{0x15, COMMAND_SET__HR_CONTINUOUS, 0};
+
+
+    //Manual stop required
+    public void heartRateMonitoring(boolean enable) {
+        if (enable) {
+            enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_HEART_RATE_CONTROL_POINT, stopHeartMeasurementContinuous, "Disabling Continuous Heart Rate Measurement");
+            enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_HEART_RATE_CONTROL_POINT, startHeartMeasurementManual,"Enabling Manual Heart Rate Measurement");
+        } else {
+            enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_HEART_RATE_CONTROL_POINT, stopHeartMeasurementManual, "Disabling Manual Heart Rate Measurement");
+        }
+    }
+
+    //Stops automatically if not wearing watch
+    public void continuousHeartRateMonitoring(boolean enable) {
+        if (enable) {
+            enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_HEART_RATE_CONTROL_POINT, stopHeartMeasurementManual, "Disabling Manual Heart Rate Measurement");
+            enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_HEART_RATE_CONTROL_POINT, startHeartMeasurementContinuous,"Enabling Continuous Heart Rate Measurement");
+        } else {
+            enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_HEART_RATE_CONTROL_POINT, stopHeartMeasurementContinuous, "Disabling Continuous Heart Rate Measurement");
+        }
+    }
+
+    public void liftWristToWake(boolean enable) {
+        byte[] cmd = enable ? HuamiService.COMMAND_ENABLE_DISPLAY_ON_LIFT_WRIST : HuamiService.COMMAND_DISABLE_DISPLAY_ON_LIFT_WRIST;
+        //for scheduled enabling, write last 4 bytes as start (byte)HH, (byte)MM, end (byte)HH, (byte)MM
+        enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION, cmd, "Lift Wrist To Wake");
+    }
+
+    public void sendFindDeviceCommand(boolean start) {
+        final UUID UUID_CHARACTERISTIC_ALERT_LEVEL = UUID.fromString((String.format(HuamiService.BASE_UUID, "2A06")));
+        byte[] cmd = start ? new byte[] {3} : new byte[] {0};
+        enqueueWriteCharacteristic(UUID_CHARACTERISTIC_ALERT_LEVEL, cmd, "Send Find Device Command");
+    }
+
+    public void enable24HrFormatTime(boolean enable) {
+        byte[] cmd = enable ? HuamiService.DATEFORMAT_TIME_24_HOURS : HuamiService.DATEFORMAT_TIME_12_HOURS;
+        enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION, cmd, "change Time Format");
+    }
+
+    public void onSetPhoneVolume(final float volume) {
+        final byte[] volumeCommand = new byte[]{MUSIC_FLAG_VOLUME, (byte) Math.round(volume)};
+        writeToChunkedOld(3, volumeCommand);
+    }
+
+    //Doesn't Work
+    public void sendReboot() {
+        enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_FIRMWARE_CONTROL, new byte[] { HuamiService.COMMAND_FIRMWARE_REBOOT}, "Sending Reboot Command");
+    }
+
+    private void handleChunkedRead(final byte[] value) {
+        switch (value[0]) {
+            case 0x03:
+                if (huami2021ChunkedDecoder != null) {
+                    final boolean needsAck = huami2021ChunkedDecoder.decode(value);
+                    if (needsAck) {
+                        sendChunkedAck();
+                    }
+                } else {
+                    Log.w(TAG, "Got chunked payload, but decoder is null");
+                }
+                return;
+            case 0x04:
+                final byte handle = value[2];
+                final byte count = value[4];
+                Log.i(TAG, MessageFormat.format("Got chunked ack, handle={0}, count={1}", handle, count));
+                // TODO: We should probably update the handle and count on the encoder
+                return;
+            default:
+                Log.w(TAG, MessageFormat.format("Unhandled chunked payload of type {0}", value[0]));
+        }
+    }
+
+    public void sendChunkedAck() {
+        final byte handle = huami2021ChunkedDecoder.getLastHandle();
+        final byte count = huami2021ChunkedDecoder.getLastCount();
+        sendChunkedReadAcknowledgement(new byte[] {0x04, 0x00, handle, 0x01, count});
+    }
+
+    private void sendChunkedReadAcknowledgement(byte[] value) {
+        if (characteristicMap.get(HuamiService.UUID_CHARACTERISTIC_CHUNKEDTRANSFER_2021_READ) == null) {
+            Log.e(TAG, "Chunked read characteristic is null, can't write :: Send chunked ack");
+            return;
+        }
+        try {
+            enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_CHUNKEDTRANSFER_2021_READ, value, "Send chunked ack");
+        } catch (final Exception e) {
+            Log.e(TAG, MessageFormat.format("Failed to send chunked ack, {0}", e));
+        }
+    }
+
+    //Used to send large data
+    protected void writeToChunkedOld(int type, byte[] data) {
+        final int MAX_CHUNKLENGTH = mMTU - 6;
+        int remaining = data.length;
+        byte count = 0;
+        while (remaining > 0) {
+            int copybytes = Math.min(remaining, MAX_CHUNKLENGTH);
+            byte[] chunk = new byte[copybytes + 3];
+
+            byte flags = 0;
+            if (remaining <= MAX_CHUNKLENGTH) {
+                flags |= 0x80; // last chunk
+                if (count == 0) {
+                    flags |= 0x40; // weird but true
+                }
+            } else if (count > 0) {
+                flags |= 0x40; // consecutive chunk
+            }
+
+            chunk[0] = 0;
+            chunk[1] = (byte) (flags | type);
+            chunk[2] = (byte) (count & 0xff);
+
+            System.arraycopy(data, count++ * MAX_CHUNKLENGTH, chunk, 3, copybytes);
+            enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_CHUNKEDTRANSFER, chunk, "Writing chunked payload");
+            remaining -= copybytes;
+        }
+    }
+
+    public void onMusicAppOpenOnWatch(boolean opened){
+
+    }
+}
