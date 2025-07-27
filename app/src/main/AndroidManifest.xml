@@ -54,7 +54,11 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity> <!-- BLE Service -->
+        </activity>
+
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts" /> <!-- BLE Service -->
 <!--        <service-->
 <!--            android:name=".ble.GTR2eBleService"-->
 <!--            android:enabled="true"-->

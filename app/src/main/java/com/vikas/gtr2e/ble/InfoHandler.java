@@ -23,6 +23,12 @@ public class InfoHandler {
 //            handleRealtimeSteps(value);
         } else if (HuamiService.UUID_CHARACTERISTIC_HEART_RATE_MEASUREMENT.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING HEART RATE INFO :: "+Arrays.toString(value));
+            if(value.length>1 && value[0]==0 && value[1]!=0) {
+                connectionCallback.onHeartRateMonitoringChanged(true);
+                connectionCallback.onHeartRateChanged(value[1]);
+            } else if(value.length > 1 && value[0] == 0){
+                connectionCallback.onHeartRateMonitoringChanged(false);
+            }
             //HANDLING HEART RATE INFO :: [0, 80] -- 0=success, 80=heart rate
 //            handleHeartrate(value);
         } else if (HuamiService.UUID_CHARACTERISTIC_AUTH.equals(characteristicUUID)) {
@@ -143,14 +149,11 @@ public class InfoHandler {
                 break;
             case HuamiDeviceEvent.FIND_PHONE_START:
                 Log.i(TAG,"find phone started");
-//                acknowledgeFindPhone(); // FIXME: premature
-//                findPhoneEvent.event = GBDeviceEventFindPhone.Event.START;
-//                evaluateGBDeviceEvent(findPhoneEvent);
+                connectionCallback.findPhoneStateChanged(true);
                 break;
             case HuamiDeviceEvent.FIND_PHONE_STOP:
                 Log.i(TAG,"find phone stopped");
-//                findPhoneEvent.event = GBDeviceEventFindPhone.Event.STOP;
-//                evaluateGBDeviceEvent(findPhoneEvent);
+                connectionCallback.findPhoneStateChanged(false);
                 break;
             case HuamiDeviceEvent.SILENT_MODE:
                 final boolean silentModeEnabled = value[1] == 1;

@@ -74,6 +74,9 @@ public class GTR2eBleService {
         void onAuthenticated();
         void onError(String error);
         void onBatteryDataReceived(byte[] batteryData);
+        void onHeartRateChanged(int heartRate);
+        void onHeartRateMonitoringChanged(boolean enabled);
+        void findPhoneStateChanged(boolean started);
     }
 
     Huami2021Handler huami2021Handler = new Huami2021Handler() {
@@ -117,6 +120,7 @@ public class GTR2eBleService {
         if (connectionCallback != null) {
             connectionCallback.onDeviceDisconnected();
         }
+        bleOperations.clear();
     }
 
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
@@ -135,6 +139,7 @@ public class GTR2eBleService {
                     if (connectionCallback != null) {
                         connectionCallback.onDeviceDisconnected();
                     }
+                    bleOperations.clear();
                 }
             } else {
                 Log.e(TAG, "Connection state change failed: " + status);
@@ -150,6 +155,7 @@ public class GTR2eBleService {
             Log.d(TAG, "onMtuChanged: mtu=" + mtu + ", status=" + status);
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 Log.d(TAG, "MTU set (actual value: " + mtu + "), proceeding to service discovery");
+                mMTU = mtu;
                 gatt.discoverServices();
             } else {
                 Log.e(TAG, "Failed to set MTU, status=" + status);

@@ -1,167 +1,268 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
     android:gravity="center|top"
     android:orientation="vertical"
     android:padding="16dp"
     tools:context=".MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
-        android:text="GTR 2e App"
-        android:textSize="24sp"
-        android:textStyle="bold" />
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="300dp"
-        android:layout_height="300dp">
-
-        <ImageView
-            android:id="@+id/imageView3"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:background="@android:color/transparent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/gtr_bg"
-            tools:srcCompat="@drawable/gtr_bg" />
-
-        <com.mikhaellopez.circularprogressbar.CircularProgressBar
-            android:id="@+id/watchBatteryProgress"
-            android:layout_width="130dp"
-            android:layout_height="wrap_content"
-            app:cpb_background_progressbar_color="@color/black"
-            app:cpb_progress="80"
-            app:cpb_progress_max="100"
-            app:cpb_progressbar_color="#12FA89"
-            app:cpb_progressbar_width="5dp"
-            app:cpb_round_border="true"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <ImageView
-            android:id="@+id/chargingIndicatorImgView"
-            android:layout_width="10dp"
-            android:layout_height="0dp"
-            android:paddingTop="2dp"
-            android:visibility="invisible"
-            app:layout_constraintBottom_toBottomOf="@+id/batteryPercentLabel"
-            app:layout_constraintEnd_toStartOf="@+id/batteryPercentLabel"
-            app:layout_constraintTop_toTopOf="@+id/batteryPercentLabel"
-            app:srcCompat="@drawable/round_bolt_24"
-            app:tint="#12FA89" />
-
-        <TextView
-            android:id="@+id/batteryPercentLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:fontFamily="sans-serif"
-            android:textAppearance="@style/TextAppearance.AppCompat.Small"
-            android:textColor="#1BBF20"
-            android:textSize="8sp"
-            app:layout_constraintBottom_toBottomOf="@+id/watchBatteryProgress"
-            app:layout_constraintEnd_toEndOf="@+id/watchBatteryProgress"
-            app:layout_constraintStart_toStartOf="@+id/watchBatteryProgress"
-            tools:text="100%" />
-
-        <ImageView
-            android:id="@+id/imageView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#00F4F4F4"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/gtr_bezel" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <TextView
-        android:id="@+id/tv_status"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:text="Disconnected"
-        android:textSize="16sp" />
-
-    <TextView
-        android:id="@+id/tv_device_info"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
-        android:text="No device connected"
-        android:textSize="14sp" />
-
-    <Button
-        android:id="@+id/btn_connect"
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:text="Connect" />
-
-    <Button
-        android:id="@+id/btn_test"
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:text="Test Functions" />
-
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:gravity="center|top"
+        android:orientation="vertical">
 
-        <Button
-            android:id="@+id/doNotDisturbBtn"
-            style="@style/Widget.Material3.Button.IconButton.Outlined"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:icon="@drawable/twotone_do_not_disturb_on_24"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:ignore="SpeakableTextPresentCheck" />
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="300dp"
+            android:layout_height="300dp">
 
-        <Button
-            android:id="@+id/button2"
-            style="@style/Widget.Material3.Button.OutlinedButton.Icon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:text="Button"
-            app:layout_constraintStart_toEndOf="@+id/doNotDisturbBtn"
-            app:layout_constraintTop_toTopOf="parent" />
+            <ImageView
+                android:id="@+id/blackBg"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:background="@android:color/transparent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/gtr_bg"
+                tools:ignore="ContentDescription"
+                tools:srcCompat="@drawable/gtr_bg" />
 
-        <ToggleButton
-            android:id="@+id/heartRateMonitoringToggle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:button="@drawable/twotone_do_not_disturb_on_24"
-            android:text="Heart Rate"
-            app:layout_constraintStart_toEndOf="@+id/button2"
-            app:layout_constraintTop_toTopOf="parent" />
+            <ImageView
+                android:id="@+id/watchHeartRateIcon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:visibility="invisible"
+                app:layout_constraintBottom_toBottomOf="@+id/watchHeartRateText"
+                app:layout_constraintEnd_toStartOf="@+id/watchHeartRateText"
+                app:layout_constraintTop_toTopOf="@+id/watchHeartRateText"
+                app:srcCompat="@drawable/rounded_ecg_heart_24"
+                app:tint="#C80B0B" />
 
-        <SeekBar
-            android:id="@+id/volumeBar"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:max="100"
-            android:progress="10"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/button2" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            <com.mikhaellopez.circularprogressbar.CircularProgressBar
+                android:id="@+id/watchBatteryProgress"
+                android:layout_width="130dp"
+                android:layout_height="wrap_content"
+                app:cpb_background_progressbar_color="@android:color/transparent"
+                app:cpb_progress="80"
+                app:cpb_progress_max="100"
+                app:cpb_progressbar_color="#12FA89"
+                app:cpb_progressbar_width="5dp"
+                app:cpb_round_border="true"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-</LinearLayout>
+            <TextView
+                android:id="@+id/watchHeartRateText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:text="0"
+                android:textColor="#F6F6F6"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:visibility="invisible"
+                app:layout_constraintBottom_toBottomOf="@+id/watchBatteryProgress"
+                app:layout_constraintEnd_toEndOf="@+id/watchBatteryProgress"
+                app:layout_constraintStart_toStartOf="@+id/watchBatteryProgress"
+                app:layout_constraintTop_toTopOf="@+id/watchBatteryProgress" />
+
+            <ImageView
+                android:id="@+id/chargingIndicatorImgView"
+                android:layout_width="10dp"
+                android:layout_height="0dp"
+                android:paddingTop="2dp"
+                android:visibility="invisible"
+                app:layout_constraintBottom_toBottomOf="@+id/batteryPercentLabel"
+                app:layout_constraintEnd_toStartOf="@+id/batteryPercentLabel"
+                app:layout_constraintTop_toTopOf="@+id/batteryPercentLabel"
+                app:srcCompat="@drawable/round_bolt_24"
+                app:tint="#12FA89"
+                tools:ignore="ContentDescription"
+                tools:visibility="visible" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/batteryPercentLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:fontFamily="sans-serif"
+                android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                android:textColor="#1BBF20"
+                android:textSize="11sp"
+                app:layout_constraintBottom_toBottomOf="@+id/watchBatteryProgress"
+                app:layout_constraintEnd_toEndOf="@+id/watchBatteryProgress"
+                app:layout_constraintStart_toStartOf="@+id/watchBatteryProgress"
+                tools:text="100%" />
+
+            <ImageView
+                android:id="@+id/deviceBezel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#00F4F4F4"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/gtr_bezel"
+                tools:ignore="ContentDescription" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:cardCornerRadius="10dp">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/tv_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="@font/comfortaa_light"
+                    android:text="Disconnected"
+                    app:layout_constraintBottom_toBottomOf="@+id/blutoothStatusIndicatorImgView"
+                    app:layout_constraintStart_toEndOf="@+id/blutoothStatusIndicatorImgView"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:ignore="HardcodedText" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/tv_device_info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/comfortaa_light"
+                    android:text="No device connected"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/connectDeviceButton"
+                    tools:ignore="HardcodedText" />
+
+                <ImageView
+                    android:id="@+id/blutoothStatusIndicatorImgView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="8dp"
+                    android:contentDescription="Status Indicator"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:srcCompat="@drawable/rounded_bluetooth_searching_24"
+                    app:tint="@android:color/system_accent1_600"
+                    tools:ignore="HardcodedText" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/connectDeviceButton"
+                    style="@style/Widget.Material3.Button.Icon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="16dp"
+                    android:text="Connect"
+                    app:icon="@drawable/rounded_bluetooth_connected_24"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            app:cardCornerRadius="10dp">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/findWatchButton"
+                    style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:enabled="false"
+                    app:icon="@drawable/rounded_crisis_alert_24"
+                    app:layout_constraintBottom_toBottomOf="@+id/textView"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/textView"
+                    tools:ignore="SpeakableTextPresentCheck" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/textView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="24dp"
+                    android:fontFamily="@font/comfortaa_light"
+                    android:text="Find Watch (Vibrate Watch 4x)"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:ignore="HardcodedText" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/textView2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="32dp"
+                    android:layout_marginBottom="24dp"
+                    android:fontFamily="@font/comfortaa_light"
+                    android:text="Continuous Heart Rate Measurement"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="@+id/textView"
+                    app:layout_constraintTop_toBottomOf="@+id/textView"
+                    tools:ignore="HardcodedText" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/continuousHeartRateSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="false"
+                    android:enabled="false"
+                    app:layout_constraintBottom_toBottomOf="@+id/textView2"
+                    app:layout_constraintEnd_toEndOf="@+id/findWatchButton"
+                    app:layout_constraintTop_toTopOf="@+id/textView2" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/doNotDisturbBtn"
+                style="@style/Widget.Material3.Button.IconButton.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:icon="@drawable/twotone_do_not_disturb_on_24"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:ignore="SpeakableTextPresentCheck" />
+
+            <SeekBar
+                android:id="@+id/volumeBar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:max="100"
+                android:progress="10"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/doNotDisturbBtn"
+                app:layout_constraintTop_toTopOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
+</ScrollView>

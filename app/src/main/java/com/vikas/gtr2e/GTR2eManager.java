@@ -48,7 +48,9 @@ public class GTR2eManager {
         void onAuthenticated();
         void onBatteryInfoUpdated(HuamiBatteryInfo batteryInfo);
         void onError(String error);
-//        void onDeviceInfoUpdated(DeviceInfo info); // New callback for device info
+        void onHeartRateChanged(int heartRate);
+        void onHeartRateMonitoringChanged(boolean enabled);
+        void findPhoneStateChanged(boolean started);
     }
     
     public GTR2eManager(Context context) {
@@ -82,7 +84,28 @@ public class GTR2eManager {
             public void onBatteryDataReceived(byte[] data) {
                 HuamiBatteryInfo.processReceivedBatteryData(data, connectionListener);
             }
-            
+
+            @Override
+            public void onHeartRateChanged(int heartRate) {
+                if (connectionListener != null) {
+                    connectionListener.onHeartRateChanged(heartRate);
+                }
+            }
+
+            @Override
+            public void onHeartRateMonitoringChanged(boolean enabled) {
+                if (connectionListener != null) {
+                    connectionListener.onHeartRateMonitoringChanged(enabled);
+                }
+            }
+
+            @Override
+            public void findPhoneStateChanged(boolean started) {
+                if (connectionListener != null) {
+                    connectionListener.findPhoneStateChanged(started);
+                }
+            }
+
             @Override
             public void onError(String error) {
                 Log.e(TAG, "BLE Error: " + error);
@@ -90,13 +113,6 @@ public class GTR2eManager {
                     connectionListener.onError(error);
                 }
             }
-
-//            @Override
-//            public void onServicesReady() {
-//                Log.d(TAG, "Services and notifications ready");
-//                // Authentication will be handled automatically by the BLE service
-//                // Once authenticated, we can request battery info
-//            }
             
             @Override
             public void onAuthenticated() {

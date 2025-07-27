@@ -43,4 +43,5 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     implementation(libs.circularprogressbar)
+    implementation(libs.cardview)
 }

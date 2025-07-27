@@ -1,8 +1,10 @@
 package com.vikas.gtr2e;
 
 import android.animation.ObjectAnimator;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
@@ -14,6 +16,7 @@ import android.content.pm.PackageManager;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -37,6 +40,10 @@ public class MainActivity extends AppCompatActivity {
     private final DeviceInfo deviceInfo = new DeviceInfo();
 
     ActivityMainBinding binding;
+    MediaPlayer mediaPlayer;
+
+    //Flags
+    boolean programmaticallyChangingHeartRateSwitch = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,19 +57,32 @@ public class MainActivity extends AppCompatActivity {
         checkPermissions();
     }
 
+
+    private void initFindPhoneTone(){
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+        }
+        // Initialize MediaPlayer with the tone
+        mediaPlayer = MediaPlayer.create(this, R.raw.findphone);
+        mediaPlayer.setLooping(true); // Loop indefinitely
+    }
+
+    private void initHeartBeatTone(){
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+        }
+        // Initialize MediaPlayer with the tone
+        mediaPlayer = MediaPlayer.create(this, R.raw.hr_reminder_beep);
+        mediaPlayer.setLooping(false); // Loop indefinitely
+    }
+
     private void initViews() {
-        binding.btnConnect.setOnClickListener(v -> connectToDevice());
-        binding.btnTest.setOnClickListener(v -> launchTestActivity());
+        binding.connectDeviceButton.setOnClickListener(v -> connectToDevice());
         binding.watchBatteryProgress.setProgress(0f);
         binding.doNotDisturbBtn.setOnClickListener(v->enableDoNotDisturb());
-        binding.heartRateMonitoringToggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                gtr2eManager.performAction("HEART_RATE_MONITORING_ON");
-            } else {
-                gtr2eManager.performAction("HEART_RATE_MONITORING_OFF");
-            }
-        });
-        binding.button2.setOnClickListener(v -> gtr2eManager.performAction("FIND_WATCH_START"));
+        binding.findWatchButton.setOnClickListener(v -> gtr2eManager.performAction("FIND_WATCH_START"));
         binding.volumeBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -77,6 +97,17 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
 
+            }
+        });
+        binding.continuousHeartRateSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if(programmaticallyChangingHeartRateSwitch) {
+                programmaticallyChangingHeartRateSwitch = false;
+                return;
+            }
+            if (isChecked) {
+                gtr2eManager.performAction("HEART_RATE_MONITORING_ON");
+            } else {
+                gtr2eManager.performAction("HEART_RATE_MONITORING_OFF");
             }
         });
     }
@@ -95,7 +126,8 @@ public class MainActivity extends AppCompatActivity {
                 if(connected) {
                     runOnUiThread(() -> {
                         binding.tvStatus.setText("Connected to GTR 2e");
-                        binding.btnConnect.setText("Disconnect");
+                        binding.connectDeviceButton.setIconResource(R.drawable.rounded_bluetooth_disabled_24);
+                        binding.connectDeviceButton.setText("Disconnect");
                         deviceInfo.setConnected(true);
                     });
                 } else {
@@ -104,7 +136,8 @@ public class MainActivity extends AppCompatActivity {
                         deviceInfo.setConnected(false);
                         deviceInfo.setAuthenticated(false);
                         deviceInfo.updateBatteryInfo(null);
-                        binding.btnConnect.setText("Connect");
+                        binding.connectDeviceButton.setIconResource(R.drawable.rounded_bluetooth_connected_24);
+                        binding.connectDeviceButton.setText("Connect");
                         updateDeviceInfo();
                     });
                 }
@@ -113,7 +146,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onAuthenticated() {
                 runOnUiThread(() -> {
-                    binding.tvStatus.setText("Connected & Authenticated");
                     deviceInfo.setAuthenticated(true);
                     Toast.makeText(MainActivity.this, "Authentication successful!", Toast.LENGTH_SHORT).show();
                     updateDeviceInfo();
@@ -136,10 +168,53 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
 
-//            @Override
-//            public void onDeviceInfoUpdated(DeviceInfo info) {
-//                runOnUiThread(() -> updateDeviceInfo());
-//            }
+            @Override
+            public void onHeartRateChanged(int heartRate) {
+                runOnUiThread(() -> {
+                    binding.watchHeartRateText.setText(MessageFormat.format("{0}", heartRate));
+                });
+            }
+
+            @Override
+            public void onHeartRateMonitoringChanged(boolean enabled) {
+                if(enabled) {
+                    runOnUiThread(() -> {
+                        binding.watchHeartRateIcon.setVisibility(View.VISIBLE);
+                        binding.watchHeartRateText.setVisibility(View.VISIBLE);
+                        programmaticallyChangingHeartRateSwitch = true;
+                        binding.continuousHeartRateSwitch.setChecked(true);
+                    });
+                } else {
+                    runOnUiThread(() -> {
+                        binding.watchHeartRateIcon.setVisibility(View.INVISIBLE);
+                        binding.watchHeartRateText.setVisibility(View.INVISIBLE);
+                        programmaticallyChangingHeartRateSwitch = true;
+                        binding.continuousHeartRateSwitch.setChecked(false);
+                    });
+                }
+            }
+
+            @Override
+            public void findPhoneStateChanged(boolean started) {
+                runOnUiThread(()->{
+                    if(started) {
+                        initFindPhoneTone();
+                        mediaPlayer.start();
+                        binding.blackBg.setImageResource(R.drawable.find_phone);
+                        binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
+                        binding.tvStatus.setText("Finding Phone...");
+                        binding.watchHeartRateIcon.setVisibility(View.INVISIBLE);
+                        binding.watchHeartRateText.setVisibility(View.INVISIBLE);
+                        binding.batteryPercentLabel.setVisibility(View.INVISIBLE);
+                        binding.watchBatteryProgress.setVisibility(View.INVISIBLE);
+                        binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
+                    } else {
+                        mediaPlayer.stop();
+                        binding.blackBg.setImageResource(R.drawable.gtr_bg);
+                        updateDeviceInfo();
+                    }
+                });
+            }
         });
     }
 
@@ -180,31 +255,26 @@ public class MainActivity extends AppCompatActivity {
         if (gtr2eManager.isConnected()) {
             gtr2eManager.disconnect();
         } else {
+            binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_searching_24);
             gtr2eManager.startScan();
         }
     }
 
     private void updateDeviceInfo() {
         if (gtr2eManager.isConnected()) {
-            StringBuilder info = new StringBuilder();
-                if (!deviceInfo.getDeviceName().isEmpty()) info.append("Device Name: ").append(deviceInfo.getDeviceName()).append("\n");
-                if (!deviceInfo.getSerialNumber().isEmpty()) info.append("Serial Number: ").append(deviceInfo.getSerialNumber()).append("\n");
-                if (!deviceInfo.getHardwareRevision().isEmpty()) info.append("Hardware Revision: ").append(deviceInfo.getHardwareRevision()).append("\n");
-                if (!deviceInfo.getSoftwareRevision().isEmpty()) info.append("Software Revision: ").append(deviceInfo.getSoftwareRevision()).append("\n");
-                if (!deviceInfo.getSystemId().isEmpty()) info.append("System ID: ").append(deviceInfo.getSystemId()).append("\n");
-                if (!deviceInfo.getPnpId().isEmpty()) info.append("PnP ID: ").append(deviceInfo.getPnpId()).append("\n");
-            info.append("Battery: ").append(deviceInfo.getBatteryPercentage()).append("%\n");
-            info.append("Charging: ").append(deviceInfo.getChargingStatus()).append("\n");
-            info.append("Authenticated: ").append(deviceInfo.isAuthenticated() ? "Yes" : "No");
+            StringBuilder info = buildDeviceInfoString();
             animateProgressBar(deviceInfo.getBatteryPercentage());
             binding.batteryPercentLabel.setText(MessageFormat.format("{0}%", deviceInfo.getBatteryPercentage()));
             binding.batteryPercentLabel.setVisibility(View.VISIBLE);
             binding.tvDeviceInfo.setText(info.toString());
+            binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_connected_24);
             if(deviceInfo.isCharging()) {
                 binding.chargingIndicatorImgView.setVisibility(View.VISIBLE);
             } else {
                 binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
             }
+            binding.continuousHeartRateSwitch.setEnabled(true);
+            binding.findWatchButton.setEnabled(true);
         } else {
             binding.tvDeviceInfo.setText("No device connected");
             animateProgressBar(0f);
@@ -212,9 +282,28 @@ public class MainActivity extends AppCompatActivity {
             binding.batteryPercentLabel.setText("0%");
             binding.tvStatus.setText("Disconnected");
             binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
+            binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_24);
+            binding.continuousHeartRateSwitch.setChecked(false);
+            binding.continuousHeartRateSwitch.setEnabled(false);
+            binding.findWatchButton.setEnabled(false);
         }
     }
-    
+
+    @NonNull
+    private StringBuilder buildDeviceInfoString() {
+        StringBuilder info = new StringBuilder();
+        if (!deviceInfo.getDeviceName().isEmpty()) info.append("Device Name: ").append(deviceInfo.getDeviceName()).append("\n");
+        if (!deviceInfo.getSerialNumber().isEmpty()) info.append("Serial Number: ").append(deviceInfo.getSerialNumber()).append("\n");
+        if (!deviceInfo.getHardwareRevision().isEmpty()) info.append("Hardware Revision: ").append(deviceInfo.getHardwareRevision()).append("\n");
+        if (!deviceInfo.getSoftwareRevision().isEmpty()) info.append("Software Revision: ").append(deviceInfo.getSoftwareRevision()).append("\n");
+        if (!deviceInfo.getSystemId().isEmpty()) info.append("System ID: ").append(deviceInfo.getSystemId()).append("\n");
+        if (!deviceInfo.getPnpId().isEmpty()) info.append("PnP ID: ").append(deviceInfo.getPnpId()).append("\n");
+        info.append("Battery: ").append(deviceInfo.getBatteryPercentage()).append("%\n");
+        info.append("Charging: ").append(deviceInfo.getChargingStatus()).append("\n");
+        info.append("Authenticated: ").append(deviceInfo.isAuthenticated() ? "Yes" : "No");
+        return info;
+    }
+
     private void refreshBattery() {
         if (gtr2eManager.isAuthenticated()) {
 //            gtr2eManager.refreshBatteryInfo();
@@ -254,6 +343,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void animateProgressBar(float newProgress) {
+        binding.watchBatteryProgress.setVisibility(View.VISIBLE);
         // Create an ObjectAnimator to animate the "progress" property
         ObjectAnimator animator = ObjectAnimator.ofFloat(binding.watchBatteryProgress, "progress", binding.watchBatteryProgress.getProgress(), newProgress);
         animator.setDuration(500); // Animation duration in milliseconds
