@@ -2,9 +2,12 @@ name: Android CI & Release
 
 on:
   push:
-    tags: ["v*"]  # Trigger only when a new tag (e.g., v1.0.0) is pushed
+    tags: ["v*"]  # Runs only when tags like v1.0.0 are pushed
   pull_request:
     branches: ["main"]
+
+permissions:
+  contents: write  # Required for releases
 
 jobs:
   build:
@@ -26,9 +29,16 @@ jobs:
       - name: Build Release APK
         run: ./gradlew assembleRelease
 
+      - name: Find APK file
+        id: find-apk
+        run: |
+          APK_PATH=$(find app/build/outputs/apk -name "*.apk" | head -n 1)
+          echo "APK Path: $APK_PATH"
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+
       - name: Upload APK to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: app/build/outputs/apk/release/app-release.apk
+          files: ${{ steps.find-apk.outputs.apk_path }}
           generate_release_notes: true
           draft: false
