@@ -2,9 +2,9 @@ name: Android CI & Release
 
 on:
   push:
-    branches: [ "main" ]
+    tags: ["v*"]  # Trigger only when a new tag (e.g., v1.0.0) is pushed
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
@@ -27,10 +27,8 @@ jobs:
         run: ./gradlew assembleRelease
 
       - name: Upload APK to GitHub Release
-        if: github.ref == 'refs/heads/main'  # Only on push to main
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            app/build/outputs/apk/release/app-release.apk
+          files: app/build/outputs/apk/release/app-release.apk
           generate_release_notes: true
-          draft: false  # Set to true if you want releases as drafts first
+          draft: false
