@@ -3,6 +3,14 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        create("release") {
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
+            storeFile = file("${rootDir}/keystore.jks")
+        }
+    }
     namespace = "com.vikas.gtr2e"
     compileSdk = 36
 
@@ -23,6 +31,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
