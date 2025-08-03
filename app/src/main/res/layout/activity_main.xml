@@ -7,6 +7,7 @@
     android:gravity="center|top"
     android:orientation="vertical"
     android:padding="16dp"
+    android:scrollbarStyle="insideOverlay"
     tools:context=".MainActivity">
 
     <LinearLayout
@@ -42,7 +43,24 @@
                 app:layout_constraintEnd_toStartOf="@+id/watchHeartRateText"
                 app:layout_constraintTop_toTopOf="@+id/watchHeartRateText"
                 app:srcCompat="@drawable/rounded_ecg_heart_24"
-                app:tint="#C80B0B" />
+                app:tint="#C80B0B"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/watchHeartRateText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:text="0"
+                android:textColor="#F6F6F6"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:visibility="invisible"
+                app:layout_constraintBottom_toBottomOf="@+id/watchBatteryProgress"
+                app:layout_constraintEnd_toEndOf="@+id/watchBatteryProgress"
+                app:layout_constraintStart_toStartOf="@+id/watchBatteryProgress"
+                app:layout_constraintTop_toTopOf="@+id/watchBatteryProgress"
+                tools:visibility="visible" />
 
             <com.mikhaellopez.circularprogressbar.CircularProgressBar
                 android:id="@+id/watchBatteryProgress"
@@ -58,21 +76,6 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
-
-            <TextView
-                android:id="@+id/watchHeartRateText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:text="0"
-                android:textColor="#F6F6F6"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:visibility="invisible"
-                app:layout_constraintBottom_toBottomOf="@+id/watchBatteryProgress"
-                app:layout_constraintEnd_toEndOf="@+id/watchBatteryProgress"
-                app:layout_constraintStart_toStartOf="@+id/watchBatteryProgress"
-                app:layout_constraintTop_toTopOf="@+id/watchBatteryProgress" />
 
             <ImageView
                 android:id="@+id/chargingIndicatorImgView"
@@ -127,13 +130,15 @@
 
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/tv_status"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_marginTop="8dp"
+                    android:layout_marginEnd="8dp"
                     android:fontFamily="@font/comfortaa_light"
                     android:text="Disconnected"
                     app:layout_constraintBottom_toBottomOf="@+id/blutoothStatusIndicatorImgView"
+                    app:layout_constraintEnd_toStartOf="@+id/connectDeviceButton"
                     app:layout_constraintStart_toEndOf="@+id/blutoothStatusIndicatorImgView"
                     app:layout_constraintTop_toTopOf="parent"
                     tools:ignore="HardcodedText" />
@@ -143,12 +148,13 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
+                    android:layout_marginTop="8dp"
                     android:layout_marginBottom="8dp"
                     android:fontFamily="@font/comfortaa_light"
                     android:text="No device connected"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/connectDeviceButton"
+                    app:layout_constraintTop_toBottomOf="@+id/stepsIcon"
                     tools:ignore="HardcodedText" />
 
                 <ImageView
@@ -175,6 +181,48 @@
                     app:icon="@drawable/rounded_bluetooth_connected_24"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
+
+                <ImageView
+                    android:id="@+id/pendingIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:layout_constraintStart_toStartOf="@+id/blutoothStatusIndicatorImgView"
+                    app:layout_constraintTop_toBottomOf="@+id/tv_status"
+                    app:srcCompat="@drawable/twotone_memory_24"
+                    app:tint="@android:color/system_accent1_600" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/pendingProcessLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:fontFamily="@font/comfortaa_light"
+                    android:text="N/A"
+                    app:layout_constraintBottom_toBottomOf="@+id/pendingIcon"
+                    app:layout_constraintStart_toEndOf="@+id/pendingIcon"
+                    app:layout_constraintTop_toTopOf="@+id/pendingIcon" />
+
+                <ImageView
+                    android:id="@+id/stepsIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:layout_constraintStart_toStartOf="@+id/blutoothStatusIndicatorImgView"
+                    app:layout_constraintTop_toBottomOf="@+id/pendingIcon"
+                    app:srcCompat="@drawable/rounded_footprint_24"
+                    app:tint="@android:color/system_accent1_600" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/stepsCountLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:fontFamily="@font/comfortaa_light"
+                    android:text="N/A"
+                    app:layout_constraintBottom_toBottomOf="@+id/stepsIcon"
+                    app:layout_constraintStart_toEndOf="@+id/stepsIcon"
+                    app:layout_constraintTop_toTopOf="@+id/stepsIcon" />
             </androidx.constraintlayout.widget.ConstraintLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -214,28 +262,52 @@
                     app:layout_constraintTop_toTopOf="parent"
                     tools:ignore="HardcodedText" />
 
-                <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/textView2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="32dp"
-                    android:layout_marginBottom="24dp"
-                    android:fontFamily="@font/comfortaa_light"
-                    android:text="Continuous Heart Rate Measurement"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="@+id/textView"
-                    app:layout_constraintTop_toBottomOf="@+id/textView"
-                    tools:ignore="HardcodedText" />
-
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/continuousHeartRateSwitch"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="8dp"
                     android:checked="false"
                     android:enabled="false"
-                    app:layout_constraintBottom_toBottomOf="@+id/textView2"
-                    app:layout_constraintEnd_toEndOf="@+id/findWatchButton"
-                    app:layout_constraintTop_toTopOf="@+id/textView2" />
+                    android:fontFamily="@font/comfortaa_light"
+                    android:text="Continuous Heart Rate Measurement"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/findWatchButton" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/liftToWakeSwitch"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:checked="false"
+                    android:enabled="false"
+                    android:fontFamily="@font/comfortaa_light"
+                    android:text="Enable Lift Wrist To Wake Screen"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/continuousHeartRateSwitch" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/keepRunningInBgSwitch"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:checked="false"
+                    android:enabled="true"
+                    android:fontFamily="@font/comfortaa_light"
+                    android:text=" Keep running in background"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/liftToWakeSwitch" />
             </androidx.constraintlayout.widget.ConstraintLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -263,6 +335,17 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@+id/doNotDisturbBtn"
                 app:layout_constraintTop_toTopOf="parent" />
+
+            <Button
+                android:id="@+id/testBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Test"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/volumeBar" />
         </androidx.constraintlayout.widget.ConstraintLayout>
+
     </LinearLayout>
 </ScrollView>

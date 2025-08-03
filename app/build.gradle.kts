@@ -19,7 +19,7 @@ android {
         minSdk = 31
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -46,11 +46,13 @@ android {
 }
 
 dependencies {
-
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     implementation(libs.circularprogressbar)
     implementation(libs.cardview)
+    implementation(libs.retrofit)
+    implementation(libs.converterGson)
+    implementation(libs.loggingInterceptor)
 }

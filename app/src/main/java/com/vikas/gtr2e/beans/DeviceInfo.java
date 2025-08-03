@@ -12,6 +12,8 @@ public class DeviceInfo {
     String softwareRevision;
     String systemId;
     String pnpId;
+    int heartRate;
+    int steps;
     int batteryPercentage;
     String batteryStatus;
     String chargingStatus;
@@ -148,6 +150,21 @@ public class DeviceInfo {
 
     public void setCharging(boolean charging) {
         isCharging = charging;
+    }
+
+    public int getHeartRate() {
+        return heartRate;
+    }
+
+    public void setHeartRate(int heartRate) {
+        this.heartRate = heartRate;
+    }
+
+    public int getSteps() {
+        return steps;
+    }
+    public void setSteps(int steps) {
+        this.steps = steps;
     }
 
     // toString method to provide a string representation of the object

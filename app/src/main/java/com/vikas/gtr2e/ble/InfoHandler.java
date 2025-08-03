@@ -1,54 +1,62 @@
 package com.vikas.gtr2e.ble;
 
-import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.util.Log;
 
+import com.vikas.gtr2e.HuamiBatteryInfo;
+import com.vikas.gtr2e.beans.DeviceInfo;
+import com.vikas.gtr2e.services.GTR2eBleService;
+
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.UUID;
 
 public class InfoHandler {
     public static final String TAG = "InfoHandler";
-    
+
     public static void onInfoReceived(BluetoothGattCharacteristic characteristic, byte[] value,
-                                      GTR2eBleService.ConnectionCallback connectionCallback, GTR2eBleService bleService) {
+                                      GTR2eBleService.ConnectionCallback connectionCallback, GTR2eBleService bleService,
+                                      DeviceInfo deviceInfo) {
         final UUID characteristicUUID = characteristic.getUuid();
+
         if (HuamiService.UUID_CHARACTERISTIC_6_BATTERY_INFO.equals(characteristicUUID)) {
-            //Log.i(TAG, "HANDLING BATTERY INFO");
-            connectionCallback.onBatteryDataReceived(value);
-            handleBatteryInfo(value, BluetoothGatt.GATT_SUCCESS);
+            Log.i(TAG, "HANDLING BATTERY INFO");
+            HuamiBatteryInfo batteryInfo = HuamiBatteryInfo.parseBatteryResponse(value);
+            if (batteryInfo != null) {
+                deviceInfo.updateBatteryInfo(batteryInfo);
+                if (connectionCallback != null) connectionCallback.onBatteryDataReceived(batteryInfo);
+            }
         } else if (HuamiService.UUID_CHARACTERISTIC_REALTIME_STEPS.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING REALTIME STEPS INFO");
-//            handleRealtimeSteps(value);
+             handleRealtimeSteps(value, deviceInfo, connectionCallback);
         } else if (HuamiService.UUID_CHARACTERISTIC_HEART_RATE_MEASUREMENT.equals(characteristicUUID)) {
-            Log.i(TAG, "HANDLING HEART RATE INFO :: "+Arrays.toString(value));
-            if(value.length>1 && value[0]==0 && value[1]!=0) {
-                connectionCallback.onHeartRateMonitoringChanged(true);
-                connectionCallback.onHeartRateChanged(value[1]);
-            } else if(value.length > 1 && value[0] == 0){
-                connectionCallback.onHeartRateMonitoringChanged(false);
+            Log.i(TAG, "HANDLING HEART RATE INFO :: " + Arrays.toString(value));
+            if (value.length > 1 && value[0] == 0 && value[1] != 0) { // Valid HR reading
+                int heartRate = value[1] & 0xFF; // Treat as unsigned byte
+                deviceInfo.setHeartRate(heartRate);
+                if (connectionCallback != null) {
+                    connectionCallback.onHeartRateMonitoringChanged(true); // Assuming this implies monitoring is on
+                    connectionCallback.onHeartRateChanged(heartRate);
+                }
+            } else if (value.length > 1 && value[0] == 0) { // Monitoring likely off or invalid reading
+                // deviceInfo.setHeartRate(0); // Or some other default
+                if (connectionCallback != null) connectionCallback.onHeartRateMonitoringChanged(false);
             }
-            //HANDLING HEART RATE INFO :: [0, 80] -- 0=success, 80=heart rate
-//            handleHeartrate(value);
         } else if (HuamiService.UUID_CHARACTERISTIC_AUTH.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING AUTHENTICATION INFO :: "+Arrays.toString(value));
             Log.i(TAG, "AUTHENTICATION?? " + characteristicUUID);
 //            logMessageContent(value);
         } else if (HuamiService.UUID_CHARACTERISTIC_DEVICEEVENT.equals(characteristicUUID)) {
-            Log.i(TAG, "HANDLING DEVICE EVENT INFO :: "+Arrays.toString(value));
-            //Log.i(TAG, "DEVICE EVENT : " + Arrays.toString(value));
-            handleDeviceEvent(value, connectionCallback, bleService);
-        } else if (HuamiService.UUID_CHARACTERISTIC_WORKOUT.equals(characteristicUUID)) {
+            Log.i(TAG, "HANDLING DEVICE EVENT INFO :: " + Arrays.toString(value));
+            handleDeviceEvent(value, connectionCallback, bleService, deviceInfo);
+            // onOperationComplete is typically called by specific event handlers if needed or at end of this block
+        }else if (HuamiService.UUID_CHARACTERISTIC_WORKOUT.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING WORKOUT INFO :: "+Arrays.toString(value));
 //            handleDeviceWorkoutEvent(value);
         } else if (HuamiService.UUID_CHARACTERISTIC_7_REALTIME_STEPS.equals(characteristicUUID)) {
-//            Log.i(TAG, "HANDLING 7CHARACTERISTIC REALTIME STEPS INFO");
-//            Log.i(TAG, MessageFormat.format("HANDLING 7CHARACTERISTIC REALTIME STEPS INFO :: {0} = {1}, byte={2}",
-//                    BleNamesResolver.resolveCharacteristicName(characteristicUUID.toString()),
-//                    new String(value), Arrays.toString(value)
-//            ));
-            handleRealtimeSteps(value);
+            Log.i(TAG, "HANDLING 7CHARACTERISTIC REALTIME STEPS INFO");
+            handleRealtimeSteps(value, deviceInfo, connectionCallback);
         } else if (HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING CONFIGURATION INFO :: "+Arrays.toString(value));
 //            handleConfigurationInfo(value);
@@ -66,42 +74,38 @@ public class InfoHandler {
             Log.i(TAG, "HANDLING ACTIVITY CONTROL INFO :: "+Arrays.toString(value));
 //            fetcher.onActivityControl(value);
         } else {
-            Log.i(TAG, "HANDLING UNHANDLED INFO");
-            if(BleNamesResolver.mCharacteristics.containsKey(characteristicUUID.toString())) {
+            Log.i(TAG, "HANDLING UNHANDLED INFO for characteristic: " + characteristicUUID);
+            if (BleNamesResolver.mCharacteristics.containsKey(characteristicUUID.toString())) {
                 Log.i(TAG, MessageFormat.format("Unhandled characteristic :: {0} = {1}, byte={2}",
                         BleNamesResolver.resolveCharacteristicName(characteristicUUID.toString()),
-                        new String(value), Arrays.toString(value)
-                        ));
+                        new String(value, StandardCharsets.UTF_8), Arrays.toString(value)
+                ));
             }
         }
     }
 
-    private static void handleBatteryInfo(byte[] value, int status) {
-        if (status == BluetoothGatt.GATT_SUCCESS) {
-            Log.i(TAG,"HANDLING BATTERY INFO :: GATT_SUCCESS, value "+value);
-            Log.e(TAG,"Battery Get Percentage = " + (value.length >= 2 ? value[1] : "Unknown"));
-        }
-    }
-    private static void handleRealtimeSteps(byte[] value) {
+
+    private static void handleRealtimeSteps(byte[] value, DeviceInfo deviceInfo, GTR2eBleService.ConnectionCallback connectionCallback) {
         if (value == null) {
-            Log.i(TAG,"realtime steps: value is null");
+            Log.i(TAG, "realtime steps: value is null");
             return;
         }
 
         if (value.length == 13) {
             byte[] stepsValue = new byte[] {value[1], value[2]};
             int steps = toUint16(stepsValue);
+            deviceInfo.setSteps(steps);
+            if (connectionCallback != null) connectionCallback.onDeviceInfoChanged(deviceInfo);
             Log.e(TAG,"realtime steps: " + steps);
         } else {
-            Log.w(TAG,"Unrecognized realtime steps value: " + Arrays.toString(value));
+            Log.w(TAG, "Unrecognized realtime steps value: " + Arrays.toString(value));
         }
     }
 
-    private static void handleDeviceEvent(byte[] value, GTR2eBleService.ConnectionCallback connectionCallback, GTR2eBleService bleService) {
+    private static void handleDeviceEvent(byte[] value, GTR2eBleService.ConnectionCallback connectionCallback, GTR2eBleService bleService, DeviceInfo deviceInfo) {
         if (value == null || value.length == 0) {
             return;
         }
-//        GBDeviceEventCallControl callCmd = new GBDeviceEventCallControl();
 
         switch (value[0]) {
             case HuamiDeviceEvent.CALL_REJECT:
@@ -111,8 +115,7 @@ public class InfoHandler {
                 break;
             case HuamiDeviceEvent.CALL_IGNORE:
                 Log.i(TAG,"call ignored");
-//                callCmd.event = GBDeviceEventCallControl.Event.IGNORE;
-//                evaluateGBDeviceEvent(callCmd);
+                if(bleService!=null) bleService.muteCall();
                 break;
             case HuamiDeviceEvent.BUTTON_PRESSED:
                 Log.i(TAG,"button pressed");
@@ -148,8 +151,8 @@ public class InfoHandler {
                 Log.i(TAG,"Tick 30 min (?)");
                 break;
             case HuamiDeviceEvent.FIND_PHONE_START:
-                Log.i(TAG,"find phone started");
-                connectionCallback.findPhoneStateChanged(true);
+                Log.i(TAG, "find phone started");
+                if (connectionCallback != null) connectionCallback.findPhoneStateChanged(true);
                 break;
             case HuamiDeviceEvent.FIND_PHONE_STOP:
                 Log.i(TAG,"find phone stopped");
@@ -238,11 +241,9 @@ public class InfoHandler {
 
                 break;
             default:
-                Log.w("unhandled event {}", String.format("0x%02x", value[0]));
+                Log.w(TAG, "unhandled device event " + String.format("0x%02x", value[0]));
         }
     }
-
-
 
     public static int toUint16(byte... bytes) {
         return (bytes[0] & 0xff) | ((bytes[1] & 0xff) << 8);

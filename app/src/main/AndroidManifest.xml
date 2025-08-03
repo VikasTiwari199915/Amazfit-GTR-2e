@@ -1,23 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
     <!-- Bluetooth permissions -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /> <!-- Notification permissions -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-<!--    <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" /> &lt;!&ndash; Storage permissions &ndash;&gt;-->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" /> <!-- Bluetooth features -->
+    <uses-permission android:name="android.permission.COMPANION_DEVICE_MANAGEMENT" />
+
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+
     <uses-feature
         android:name="android.hardware.bluetooth"
         android:required="true" />
     <uses-feature
         android:name="android.hardware.bluetooth_le"
         android:required="true" />
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -28,7 +43,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.GTR2eApp"
-        tools:targetApi="31">
+        >
         <activity
             android:name=".SettingsActivity"
             android:exported="false"
@@ -55,23 +70,34 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".services.GTR2eBleService"
+            android:foregroundServiceType="connectedDevice"
+            android:icon="@drawable/rounded_aod_watch_24"
+            android:stopWithTask="false"
+            android:enabled="true"
+            android:exported="false" />
 
         <meta-data
             android:name="preloaded_fonts"
-            android:resource="@array/preloaded_fonts" /> <!-- BLE Service -->
-<!--        <service-->
-<!--            android:name=".ble.GTR2eBleService"-->
-<!--            android:enabled="true"-->
-<!--            android:exported="false" /> &lt;!&ndash; Notification Listener Service &ndash;&gt;-->
-<!--        <service-->
-<!--            android:name=".notification.NotificationListenerService"-->
-<!--            android:enabled="true"-->
-<!--            android:exported="false"-->
-<!--            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">-->
-<!--            <intent-filter>-->
-<!--                <action android:name="android.service.notification.NotificationListenerService" />-->
-<!--            </intent-filter>-->
-<!--        </service>-->
+            android:resource="@array/preloaded_fonts" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.vikas.gtr2e.fileProvider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="application/vnd.android.package-archive" />
+        </intent>
+    </queries>
 
 </manifest>
