@@ -2,7 +2,6 @@ package com.vikas.gtr2e.services;
 
 import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_INDICATE;
 import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_NOTIFY;
-
 import static com.vikas.gtr2e.ble.HuamiService.COMMAND_DO_NOT_DISTURB_AUTOMATIC;
 import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_VOLUME;
 
@@ -30,15 +29,16 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import com.vikas.gtr2e.beans.DeviceInfo;
-import com.vikas.gtr2e.HuamiBatteryInfo; // Assuming HuamiBatteryInfo is in this package or imported
 import com.vikas.gtr2e.ble.BleNamesResolver;
 import com.vikas.gtr2e.ble.Huami2021ChunkedDecoder;
 import com.vikas.gtr2e.ble.Huami2021ChunkedEncoder;
 import com.vikas.gtr2e.ble.Huami2021Handler;
+import com.vikas.gtr2e.ble.HuamiBatteryInfo;
 import com.vikas.gtr2e.ble.HuamiService;
 import com.vikas.gtr2e.ble.InfoHandler;
 import com.vikas.gtr2e.utils.IncomingCallReceiver;
 import com.vikas.gtr2e.utils.NotificationUtility;
+import com.vikas.gtr2e.utils.Prefs;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -50,164 +50,55 @@ import java.util.LinkedList;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
+
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+
+import lombok.Getter;
+import lombok.Setter;
 
 @SuppressLint("MissingPermission")
 public class GTR2eBleService extends Service {
 
-    private static final String TAG = "GTR2eBleService";
-    HashMap<UUID, BluetoothGattCharacteristic> characteristicMap = new HashMap<>();
-
     // UUIDs for Huami protocol
     public static final UUID AUTH_SERVICE_UUID = UUID.fromString("0000fee1-0000-1000-8000-00805f9b34fb");
+    public static final byte COMMAND_SET_HR_SLEEP = 0x0;
+    public static final byte COMMAND_SET__HR_CONTINUOUS = 0x1;
+    public static final byte COMMAND_SET_HR_MANUAL = 0x2;
+    protected static final int MIN_MTU = 23;
+    private static final String TAG = "GTR2eBleService";
     private static final UUID AUTH_CHARACTERISTIC_UUID = UUID.fromString("00000009-0000-3512-2118-0009af100700");
     private static final UUID AUTH_CHARACTERISTIC_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     private static final UUID HUAMI_SERVICE_UUID = UUID.fromString("0000fee0-0000-1000-8000-00805f9b34fb");
     private static final UUID CHUNKED_READ_UUID = UUID.fromString("00000017-0000-3512-2118-0009af100700");
-
     private static final byte[] DEFAULT_AUTH_KEY = new byte[]{
             (byte) 0x6c, (byte) 0xd3, (byte) 0x1f, (byte) 0x60,
             (byte) 0x6d, (byte) 0xf4, (byte) 0xb7, (byte) 0x8d,
             (byte) 0x3a, (byte) 0xfd, (byte) 0xcc, (byte) 0x0f,
             (byte) 0x7b, (byte) 0x61, (byte) 0x74, (byte) 0x84
     };
-
+    private static final byte[] startHeartMeasurementManual = new byte[]{0x15, COMMAND_SET_HR_MANUAL, 1};
+    private static final byte[] stopHeartMeasurementManual = new byte[]{0x15, COMMAND_SET_HR_MANUAL, 0};
+    private static final byte[] startHeartMeasurementContinuous = new byte[]{0x15, COMMAND_SET__HR_CONTINUOUS, 1};
+    private static final byte[] stopHeartMeasurementContinuous = new byte[]{0x15, COMMAND_SET__HR_CONTINUOUS, 0};
+    @Getter
+    private final DeviceInfo deviceInfo = new DeviceInfo();
+    private final Queue<Runnable> bleOperations = new LinkedList<>();
+    //#### Service related functions
+    private final IBinder binder = new LocalBinder();
+    HashMap<UUID, BluetoothGattCharacteristic> characteristicMap = new HashMap<>();
     private Context context;
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothGatt gatt;
+    @Setter
     private ConnectionCallback connectionCallback;
-
-    private final DeviceInfo deviceInfo = new DeviceInfo();
-
     private Huami2021ChunkedEncoder huami2021ChunkedEncoder;
     private Huami2021ChunkedDecoder huami2021ChunkedDecoder;
-
     private BluetoothGattCharacteristic characteristicChunked2021Write;
     private BluetoothGattCharacteristic characteristicChunked2021Read;
-
-
-    protected static final int MIN_MTU = 23;
+    Huami2021Handler huami2021Handler = (type, payload) -> handleChunkedRead(payload);
     private int mMTU = MIN_MTU;
-
-    private final Queue<Runnable> bleOperations = new LinkedList<>();
     private boolean isBleBusy = false;
-
-
-    //#### Service related functions
-    private final IBinder binder = new LocalBinder();
-
-    // Binder class for clients to access this service
-    public class LocalBinder extends Binder {
-        public GTR2eBleService getService() {
-            return GTR2eBleService.this;
-        }
-    }
-
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return binder;
-    }
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        Log.d(TAG, "Service created");
-        this.context = getApplicationContext();
-        initializeBluetooth();
-        NotificationUtility.createNotificationChannel(context);
-        NotificationUtility.startAsForegroundService(GTR2eBleService.this, deviceInfo.isConnected());
-        deviceInfo.setDeviceName("Amazfit GTR 2e");
-        registerCallReceiver();
-    }
-
-    private void initializeBluetooth() {
-        BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        if (bluetoothManager != null) {
-            bluetoothAdapter = bluetoothManager.getAdapter();
-        }
-        huami2021ChunkedDecoder = new Huami2021ChunkedDecoder(huami2021Handler, false);
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "Service started");
-        return START_STICKY;
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        Log.d(TAG, "Service destroyed");
-        disconnect();
-    }
-
-    public DeviceInfo getDeviceInfo() {
-        return deviceInfo;
-    }
-
-    public interface ConnectionCallback {
-        void onDeviceConnected(BluetoothDevice device);
-
-        void onDeviceDisconnected();
-
-        void onAuthenticated();
-
-        void onError(String error);
-
-        void onBatteryDataReceived(HuamiBatteryInfo batteryInfo);
-
-        void onHeartRateChanged(int heartRate);
-
-        void onHeartRateMonitoringChanged(boolean enabled);
-
-        void findPhoneStateChanged(boolean started);
-
-        void pendingBleProcessChanged(int count);
-
-        void onDeviceInfoChanged(DeviceInfo deviceInfo);
-    }
-
-    Huami2021Handler huami2021Handler = new Huami2021Handler() {
-        @Override
-        public void handle2021Payload(short type, byte[] payload) {
-            handleChunkedRead(payload);
-        }
-    };
-
-    public void setConnectionCallback(ConnectionCallback callback) {
-        this.connectionCallback = callback;
-    }
-
-    @SuppressLint("MissingPermission")
-    public void connect(BluetoothDevice device) {
-        deviceInfo.setAuthenticated(false);
-        BluetoothDevice device1 = bluetoothAdapter.getRemoteDevice("D9:B6:53:69:F2:F2");
-        gatt = device1.connectGatt(context, false, gattCallback);
-    }
-
-    public void disconnect() {
-        Log.d(TAG, "Disconnecting from device");
-        if (gatt != null) {
-            try {
-                gatt.disconnect();
-                gatt.close();
-            } catch (Exception e) {
-                Log.e(TAG, "Error during disconnect/close", e);
-            }
-            gatt = null;
-        }
-        deviceInfo.setAuthenticated(false);
-        deviceInfo.setConnected(false);
-        deviceInfo.updateBatteryInfo(null);
-
-        updateConnectionState();
-        if (connectionCallback != null) {
-            connectionCallback.onDeviceDisconnected();
-        }
-        bleOperations.clear();
-    }
 
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
         @Override
@@ -217,8 +108,12 @@ public class GTR2eBleService extends Service {
                 if (newState == BluetoothGatt.STATE_CONNECTED) {
                     Log.d(TAG, "Connected to GATT server, requesting MTU 247");
                     deviceInfo.setConnected(true);
-                    if (gatt.getDevice() != null && gatt.getDevice().getName() != null) {
-                         deviceInfo.setDeviceName(gatt.getDevice().getName());
+                    if (gatt.getDevice() != null) {
+                        if (gatt.getDevice().getName() != null) {
+                            deviceInfo.setDeviceName(gatt.getDevice().getName());
+                        }
+                        // Save the successful MAC address
+                        Prefs.setLastDeviceMac(context, gatt.getDevice().getAddress());
                     }
                     gatt.requestMtu(247);
                     if (connectionCallback != null) {
@@ -233,7 +128,10 @@ public class GTR2eBleService extends Service {
                     if (connectionCallback != null) {
                         connectionCallback.onDeviceDisconnected();
                     }
-                    bleOperations.clear();
+                    synchronized (bleOperations) {
+                        bleOperations.clear();
+                        isBleBusy = false;
+                    }
                     updateConnectionState();
                 }
             } else {
@@ -246,7 +144,6 @@ public class GTR2eBleService extends Service {
                 }
                 disconnect();
                 updateConnectionState();
-                bleOperations.clear();
             }
         }
 
@@ -286,7 +183,8 @@ public class GTR2eBleService extends Service {
                         }
                     } else {
                         Log.e(TAG, "FEE1 service not found");
-                        if (connectionCallback != null) connectionCallback.onError("FEE1 service not found");
+                        if (connectionCallback != null)
+                            connectionCallback.onError("FEE1 service not found");
                     }
                 }
             } else {
@@ -364,6 +262,106 @@ public class GTR2eBleService extends Service {
         }
     };
 
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return binder;
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Log.d(TAG, "Service created");
+        this.context = getApplicationContext();
+        initializeBluetooth();
+        NotificationUtility.createNotificationChannel(context);
+        NotificationUtility.startAsForegroundService(GTR2eBleService.this, deviceInfo.isConnected());
+        deviceInfo.setDeviceName("Amazfit GTR 2e");
+        registerCallReceiver();
+    }
+
+    private void initializeBluetooth() {
+        BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        if (bluetoothManager != null) {
+            bluetoothAdapter = bluetoothManager.getAdapter();
+        }
+        huami2021ChunkedDecoder = new Huami2021ChunkedDecoder(huami2021Handler, false);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d(TAG, "Service started");
+        return START_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "Service destroyed");
+        disconnect();
+    }
+
+    @SuppressLint("MissingPermission")
+    public void connect(BluetoothDevice device) {
+        if (gatt != null) {
+            Log.w(TAG, "Existing GATT found, closing...");
+            gatt.disconnect();
+            gatt.close();
+            gatt = null;
+            // Small delay to allow stack to clean up
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException ignored) {
+            }
+        }
+
+        BluetoothDevice targetDevice = device;
+        if (targetDevice == null) {
+            String lastMac = Prefs.getLastDeviceMac(context);
+            if (lastMac != null && bluetoothAdapter != null) {
+                targetDevice = bluetoothAdapter.getRemoteDevice(lastMac);
+            }
+        }
+
+        if (targetDevice == null) {
+            Log.e(TAG, "Connect called with null device and no saved MAC address.");
+            if (connectionCallback != null) connectionCallback.onError("No device to connect to");
+            return;
+        }
+
+        Log.d(TAG, "Connecting to: " + targetDevice.getAddress());
+        deviceInfo.setAuthenticated(false);
+        if (targetDevice.getBondState() == BluetoothDevice.BOND_NONE) {
+            targetDevice.createBond();
+        }
+        gatt = targetDevice.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE);
+    }
+
+    public void disconnect() {
+        Log.d(TAG, "Disconnecting from device");
+        if (gatt != null) {
+            try {
+                gatt.disconnect();
+                gatt.close();
+            } catch (Exception e) {
+                Log.e(TAG, "Error during disconnect/close", e);
+            }
+            gatt = null;
+        }
+        deviceInfo.setAuthenticated(false);
+        deviceInfo.setConnected(false);
+        deviceInfo.updateBatteryInfo(null);
+
+        updateConnectionState();
+        if (connectionCallback != null) {
+            connectionCallback.onDeviceDisconnected();
+        }
+        synchronized (bleOperations) {
+            bleOperations.clear();
+            isBleBusy = false;
+        }
+    }
+
     private void handleDiscoveredServices(BluetoothGatt gatt) {
         for (BluetoothGattService service : gatt.getServices()) {
             Log.d(TAG, "Service found: " + BleNamesResolver.resolveServiceName(service.getUuid().toString()));
@@ -397,6 +395,7 @@ public class GTR2eBleService extends Service {
         }
     }
 
+    // endregion
 
     //region AUTH PROCESS
     private void startAuthChallenge1stStep() {
@@ -456,7 +455,11 @@ public class GTR2eBleService extends Service {
                 if (value[2] == 0x01 && value.length >= 19) {
                     byte[] random = Arrays.copyOfRange(value, 3, 19);
                     Log.d(TAG, "Received valid challenge: " + bytesToHex(random));
-                    byte[] encrypted = encryptWithKey(random, DEFAULT_AUTH_KEY);
+                    byte[] authKey = DEFAULT_AUTH_KEY;
+                    if (Prefs.getAuthKey(getApplicationContext()) != null) {
+                        authKey = getBytesFromHex(Prefs.getAuthKey(getApplicationContext()));
+                    }
+                    byte[] encrypted = encryptWithKey(random, authKey);
                     sendEncryptedResponse(encrypted);
                 } else {
                     Log.e(TAG, "Invalid challenge response");
@@ -512,11 +515,9 @@ public class GTR2eBleService extends Service {
             return cipher.doFinal(data);
         } catch (Exception e) {
             Log.e(TAG, "Encryption failed", e);
-            return new byte[16]; 
+            return new byte[16];
         }
     }
-
-    // endregion
 
     private void startOperationsAfterAuth() {
         if (gatt == null) return;
@@ -530,14 +531,14 @@ public class GTR2eBleService extends Service {
                 Log.e(TAG, "Battery characteristic not found after auth.");
             }
         } else {
-             Log.e(TAG, "Huami service not found after auth.");
+            Log.e(TAG, "Huami service not found after auth.");
         }
     }
 
     //region QUEUE OPERATIONS HELPER METHODS
     private void enqueueReadCharacteristic(UUID serviceUuid, UUID characteristicUuid) {
         if (gatt == null) {
-            Log.e(TAG, "Gatt is null");
+            Log.e(TAG, "GATT is null");
             return;
         }
         BluetoothGattService service = gatt.getService(serviceUuid);
@@ -557,38 +558,39 @@ public class GTR2eBleService extends Service {
         }
     }
 
-    private void enqueueWriteCharacteristic(UUID characteristicUuid, byte[] value, @Nullable String desc) {
+    public void enqueueWriteCharacteristic(UUID characteristicUuid, byte[] value, @Nullable String desc) {
         if (gatt == null) {
-            Log.e(TAG, "Gatt is null, Writing \"" + desc + "\" Aborted");
+            Log.e(TAG, "GATT is null, Writing \"" + desc + "\" Aborted");
             return;
         }
         BluetoothGattCharacteristic characteristic = characteristicMap.get(characteristicUuid);
         if (characteristic == null) {
-             // Fallback to find characteristic if not in map (e.g. for auth char before full discovery)
+            // Fallback to find characteristic if not in map (e.g. for auth char before full discovery)
             if (characteristicUuid.equals(AUTH_CHARACTERISTIC_UUID) && gatt.getService(AUTH_SERVICE_UUID) != null) {
                 characteristic = gatt.getService(AUTH_SERVICE_UUID).getCharacteristic(AUTH_CHARACTERISTIC_UUID);
             }
             if (characteristic == null) {
-                 Log.e(TAG, "Characteristic is null for UUID " + characteristicUuid + ", Writing \"" + desc + "\" Aborted");
-                 onOperationComplete(); // Prevent queue stall
-                 return;
+                Log.e(TAG, "Characteristic is null for UUID " + characteristicUuid + ", Writing \"" + desc + "\" Aborted");
+                onOperationComplete(); // Prevent queue stall
+                return;
             }
         }
-        
+
         final BluetoothGattCharacteristic finalCharacteristic = characteristic;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             enqueueBleOperation(() -> {
                 int result = gatt.writeCharacteristic(finalCharacteristic, value, finalCharacteristic.getWriteType());
-                 Log.d(TAG, MessageFormat.format("Wrote {0} to characteristic {1}, result: {2}", Arrays.toString(value), finalCharacteristic.getUuid(), result));
+                Log.d(TAG, MessageFormat.format("Wrote {0} to characteristic {1}, result: {2}", Arrays.toString(value), finalCharacteristic.getUuid(), result));
             }, Optional.ofNullable(desc).orElseGet(() -> "Write Characteristic: " + characteristicUuid.toString()));
         } else {
             finalCharacteristic.setValue(value);
             enqueueBleOperation(() -> {
                 boolean result = gatt.writeCharacteristic(finalCharacteristic);
-                 Log.d(TAG, MessageFormat.format("LEGACY :: Wrote {0} to characteristic {1}, result: {2}", Arrays.toString(value), finalCharacteristic.getUuid(), result));
+                Log.d(TAG, MessageFormat.format("LEGACY :: Wrote {0} to characteristic {1}, result: {2}", Arrays.toString(value), finalCharacteristic.getUuid(), result));
             }, desc != null ? desc : "Write Characteristic: " + characteristicUuid.toString());
         }
     }
+    //endregion
 
     private String bytesToHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
@@ -634,7 +636,7 @@ public class GTR2eBleService extends Service {
     // This method is now consistently called from the gattCallback methods for authenticated operations
     public void onOperationComplete() { // Made public to be called by InfoHandler if needed
         isBleBusy = false; // Mark as not busy before processing next
-        processNextOperation(); 
+        processNextOperation();
     }
 
     private void enableNotifications(BluetoothGattCharacteristic characteristic) {
@@ -648,7 +650,7 @@ public class GTR2eBleService extends Service {
             // onOperationComplete(); // If we consider this op failed, to unblock queue
             return;
         }
-        
+
         byte[] valueToSet;
         if ((properties & PROPERTY_NOTIFY) != 0) {
             valueToSet = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE;
@@ -659,7 +661,7 @@ public class GTR2eBleService extends Service {
             // onOperationComplete(); // If we consider this op failed
             return;
         }
-        
+
         descriptor.setValue(valueToSet);
         enqueueBleOperation(() -> {
             boolean success = gatt.writeDescriptor(descriptor);
@@ -669,7 +671,6 @@ public class GTR2eBleService extends Service {
             }
         }, "Write CCCD for " + characteristic.getUuid());
     }
-    //endregion
 
     public void enableDoNotDisturb() {
         byte[] cmd = COMMAND_DO_NOT_DISTURB_AUTOMATIC.clone();
@@ -681,20 +682,10 @@ public class GTR2eBleService extends Service {
         byte[] cmd = HuamiService.DATEFORMAT_DATE_MM_DD_YYYY; // Ensure this is correctly defined
         // Ensure dateFormat is not too long for the cmd array starting at index 3
         byte[] dateFormatBytes = dateFormat.getBytes();
-        int len = Math.min(dateFormatBytes.length, cmd.length -3);
+        int len = Math.min(dateFormatBytes.length, cmd.length - 3);
         System.arraycopy(dateFormatBytes, 0, cmd, 3, len);
         enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION, cmd, "Change Date Format");
     }
-
-
-    public static final byte COMMAND_SET_HR_SLEEP = 0x0;
-    public static final byte COMMAND_SET__HR_CONTINUOUS = 0x1;
-    public static final byte COMMAND_SET_HR_MANUAL = 0x2;
-    private static final byte[] startHeartMeasurementManual = new byte[]{0x15, COMMAND_SET_HR_MANUAL, 1};
-    private static final byte[] stopHeartMeasurementManual = new byte[]{0x15, COMMAND_SET_HR_MANUAL, 0};
-    private static final byte[] startHeartMeasurementContinuous = new byte[]{0x15, COMMAND_SET__HR_CONTINUOUS, 1};
-    private static final byte[] stopHeartMeasurementContinuous = new byte[]{0x15, COMMAND_SET__HR_CONTINUOUS, 0};
-
 
     public void heartRateMonitoring(boolean enable) {
         if (enable) {
@@ -773,13 +764,13 @@ public class GTR2eBleService extends Service {
     private void sendChunkedReadAcknowledgement(byte[] value) {
         UUID chunkedReadCharUUID = HuamiService.UUID_CHARACTERISTIC_CHUNKEDTRANSFER_2021_READ; // Assuming this is correct
         if (characteristicMap.get(chunkedReadCharUUID) == null && characteristicChunked2021Read == null) {
-             Log.e(TAG, "Chunked read characteristic (2021) is null, can't write :: Send chunked ack");
-             onOperationComplete(); // Unblock queue
-             return;
+            Log.e(TAG, "Chunked read characteristic (2021) is null, can't write :: Send chunked ack");
+            onOperationComplete(); // Unblock queue
+            return;
         }
         // Prefer the explicitly stored characteristic if available
         UUID targetCharUUID = (characteristicChunked2021Read != null) ? characteristicChunked2021Read.getUuid() : chunkedReadCharUUID;
-        
+
         try {
             // Note: Writing to a "read" characteristic is unusual, ensure this is the correct behavior for ack
             enqueueWriteCharacteristic(targetCharUUID, value, "Send chunked ack");
@@ -817,12 +808,9 @@ public class GTR2eBleService extends Service {
         }
     }
 
-
     public void onMusicAppOpenOnWatch(boolean opened) {
         // Implementation based on how your watch communicates this
     }
-
-    public enum CALL_STATUS {INCOMING, PICKED, ENDED}
 
     public void setCallStatus(CALL_STATUS callStatus, String caller) {
         if (callStatus == CALL_STATUS.INCOMING) {
@@ -871,5 +859,47 @@ public class GTR2eBleService extends Service {
     public void muteCall() {
         Intent intent = new Intent("com.vikas.gtr2e.MUTE_CALL");
         sendBroadcast(intent);
+    }
+
+    private byte[] getBytesFromHex(String hex) {
+        hex = hex.replace("0x", "");
+
+        byte[] bytes = new byte[hex.length() / 2];
+
+        for (int i = 0; i < hex.length(); i += 2) {
+            bytes[i / 2] = (byte) Integer.parseInt(hex.substring(i, i + 2), 16);
+        }
+        return bytes;
+    }
+
+    public enum CALL_STATUS {INCOMING, PICKED, ENDED}
+
+    public interface ConnectionCallback {
+        void onDeviceConnected(BluetoothDevice device);
+
+        void onDeviceDisconnected();
+
+        void onAuthenticated();
+
+        void onError(String error);
+
+        void onBatteryDataReceived(HuamiBatteryInfo batteryInfo);
+
+        void onHeartRateChanged(int heartRate);
+
+        void onHeartRateMonitoringChanged(boolean enabled);
+
+        void findPhoneStateChanged(boolean started);
+
+        void pendingBleProcessChanged(int count);
+
+        void onDeviceInfoChanged(DeviceInfo deviceInfo);
+    }
+
+    // Binder class for clients to access this service
+    public class LocalBinder extends Binder {
+        public GTR2eBleService getService() {
+            return GTR2eBleService.this;
+        }
     }
 }

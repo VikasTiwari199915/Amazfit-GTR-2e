@@ -6,7 +6,6 @@ import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.IntentFilter;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -26,10 +25,7 @@ import android.os.Environment;
 import android.provider.Settings;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
-import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.SeekBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
@@ -39,6 +35,7 @@ import androidx.core.content.FileProvider;
 import android.util.Log;
 
 import com.vikas.gtr2e.beans.DeviceInfo;
+import com.vikas.gtr2e.ble.HuamiBatteryInfo;
 import com.vikas.gtr2e.databinding.ActivityMainBinding;
 import com.vikas.gtr2e.utils.AppAutoUpdater;
 import com.vikas.gtr2e.utils.Prefs;
@@ -46,7 +43,6 @@ import com.vikas.gtr2e.utils.Prefs;
 import java.io.File;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -67,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
     boolean programmaticallyChangingHeartRateSwitch = false;
     boolean isProgrammaticallyChangingLiftToWakeSwitch = false;
     boolean isProgrammaticallyChangingKeepRunningInBackground = false;
+    boolean deviceAddedJustNow = false;
 
 
     //Updates
@@ -78,17 +75,24 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        deviceAddedJustNow = getIntent().getBooleanExtra("DEVICE_ADDED_JUST_NOW", false);
 
-        checkPermissions();
         initViews();
-        initBluetooth();
-        initGTR2eManager();
+        if(checkPermissions()){
+            initBluetooth();
+            initGTR2eManager();
+        }
         AppAutoUpdater.checkForUpdates(this, this::showUpdateDialog);
     }
 
 
     private void initViews() {
         binding.connectDeviceButton.setOnClickListener(v -> connectToDevice());
+        binding.connectDeviceButton.setOnLongClickListener(v -> {
+            startActivity(new Intent(this, ZeppLoginActivity.class));
+            return true;
+        });
+
         binding.watchBatteryProgress.setProgress(0f);
         binding.doNotDisturbBtn.setOnClickListener(v->enableDoNotDisturb());
         binding.findWatchButton.setOnClickListener(v -> {
@@ -259,6 +263,10 @@ public class MainActivity extends AppCompatActivity {
         gtr2eManager.setConnectionListener(connectionListener);
         gtr2eManager.onMainActivityResumed();
         updateDeviceInfo();
+        if(deviceAddedJustNow) {
+            connectToDevice();
+            deviceAddedJustNow = false;
+        }
     }
 
     private void watchAuthenticatedStatusChanged() {
@@ -294,7 +302,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void checkPermissions() {
+    private boolean checkPermissions() {
         List<String> permissions = new ArrayList<>();
 
         Collections.addAll(permissions,
@@ -324,7 +332,21 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, permissions.toArray(new String[0]), PERMISSION_REQUEST_CODE);
         }
         requestNotificationPolicyAccess();
+        return allGranted;
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults, int deviceId) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId);
+        if(requestCode == PERMISSION_REQUEST_CODE && grantResults.length > 0){
+            Log.e(TAG, "PERMISSION RESULT");
+            if(checkPermissions()){
+                initBluetooth();
+                initGTR2eManager();
+            }
+        }
+    }
+
     private void requestNotificationPolicyAccess() {
         if (!isNotificationPolicyAccessGranted()) {
             Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
@@ -360,11 +382,11 @@ public class MainActivity extends AppCompatActivity {
         if (gtr2eManager == null) {
             Log.w(TAG, "updateDeviceInfo called but gtr2eManager is null.");
             // Set UI to a default disconnected state
-            binding.tvDeviceInfo.setText("No device connected (manager null)");
+            binding.tvDeviceInfo.setText(R.string.no_device_connected_manager_is_null);
             animateProgressBar(0f);
             binding.batteryPercentLabel.setVisibility(View.INVISIBLE);
             binding.batteryPercentLabel.setText("0%");
-            binding.tvStatus.setText("Disconnected");
+            binding.tvStatus.setText(R.string.disconnected);
             binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
             binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_24);
             binding.continuousHeartRateSwitch.setChecked(false);
@@ -393,11 +415,11 @@ public class MainActivity extends AppCompatActivity {
             binding.liftToWakeSwitch.setEnabled(true);
             binding.stepsCountLabel.setText(String.format(Locale.ENGLISH,"%d",currentDeviceInfo.getSteps()));
         } else {
-            binding.tvDeviceInfo.setText("No device connected");
+            binding.tvDeviceInfo.setText(R.string.no_device_connected);
             animateProgressBar(0f);
             binding.batteryPercentLabel.setVisibility(View.INVISIBLE);
             binding.batteryPercentLabel.setText("0%");
-            binding.tvStatus.setText("Disconnected");
+            binding.tvStatus.setText(R.string.disconnected);
             binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
             binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_24);
             binding.continuousHeartRateSwitch.setChecked(false);

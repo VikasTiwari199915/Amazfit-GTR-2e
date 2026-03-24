@@ -3,7 +3,6 @@ package com.vikas.gtr2e.ble;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.util.Log;
 
-import com.vikas.gtr2e.HuamiBatteryInfo;
 import com.vikas.gtr2e.beans.DeviceInfo;
 import com.vikas.gtr2e.services.GTR2eBleService;
 
@@ -25,11 +24,12 @@ public class InfoHandler {
             HuamiBatteryInfo batteryInfo = HuamiBatteryInfo.parseBatteryResponse(value);
             if (batteryInfo != null) {
                 deviceInfo.updateBatteryInfo(batteryInfo);
-                if (connectionCallback != null) connectionCallback.onBatteryDataReceived(batteryInfo);
+                if (connectionCallback != null)
+                    connectionCallback.onBatteryDataReceived(batteryInfo);
             }
         } else if (HuamiService.UUID_CHARACTERISTIC_REALTIME_STEPS.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING REALTIME STEPS INFO");
-             handleRealtimeSteps(value, deviceInfo, connectionCallback);
+            handleRealtimeSteps(value, deviceInfo, connectionCallback);
         } else if (HuamiService.UUID_CHARACTERISTIC_HEART_RATE_MEASUREMENT.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING HEART RATE INFO :: " + Arrays.toString(value));
             if (value.length > 1 && value[0] == 0 && value[1] != 0) { // Valid HR reading
@@ -41,37 +41,38 @@ public class InfoHandler {
                 }
             } else if (value.length > 1 && value[0] == 0) { // Monitoring likely off or invalid reading
                 // deviceInfo.setHeartRate(0); // Or some other default
-                if (connectionCallback != null) connectionCallback.onHeartRateMonitoringChanged(false);
+                if (connectionCallback != null)
+                    connectionCallback.onHeartRateMonitoringChanged(false);
             }
         } else if (HuamiService.UUID_CHARACTERISTIC_AUTH.equals(characteristicUUID)) {
-            Log.i(TAG, "HANDLING AUTHENTICATION INFO :: "+Arrays.toString(value));
+            Log.i(TAG, "HANDLING AUTHENTICATION INFO :: " + Arrays.toString(value));
             Log.i(TAG, "AUTHENTICATION?? " + characteristicUUID);
 //            logMessageContent(value);
         } else if (HuamiService.UUID_CHARACTERISTIC_DEVICEEVENT.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING DEVICE EVENT INFO :: " + Arrays.toString(value));
             handleDeviceEvent(value, connectionCallback, bleService, deviceInfo);
             // onOperationComplete is typically called by specific event handlers if needed or at end of this block
-        }else if (HuamiService.UUID_CHARACTERISTIC_WORKOUT.equals(characteristicUUID)) {
-            Log.i(TAG, "HANDLING WORKOUT INFO :: "+Arrays.toString(value));
+        } else if (HuamiService.UUID_CHARACTERISTIC_WORKOUT.equals(characteristicUUID)) {
+            Log.i(TAG, "HANDLING WORKOUT INFO :: " + Arrays.toString(value));
 //            handleDeviceWorkoutEvent(value);
         } else if (HuamiService.UUID_CHARACTERISTIC_7_REALTIME_STEPS.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING 7CHARACTERISTIC REALTIME STEPS INFO");
             handleRealtimeSteps(value, deviceInfo, connectionCallback);
         } else if (HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION.equals(characteristicUUID)) {
-            Log.i(TAG, "HANDLING CONFIGURATION INFO :: "+Arrays.toString(value));
+            Log.i(TAG, "HANDLING CONFIGURATION INFO :: " + Arrays.toString(value));
 //            handleConfigurationInfo(value);
         } else if (HuamiService.UUID_CHARACTERISTIC_CHUNKEDTRANSFER_2021_READ.equals(characteristicUUID)) {
-            Log.i(TAG, "HANDLING CHUNKED TRANSFER INFO :: "+Arrays.toString(value));
-            Log.e(TAG,"CHUNKED TRANSFER INFO String Value :: "+new String(value));
+            Log.i(TAG, "HANDLING CHUNKED TRANSFER INFO :: " + Arrays.toString(value));
+            Log.e(TAG, "CHUNKED TRANSFER INFO String Value :: " + new String(value));
 //            handleChunked(value);
         } else if (HuamiService.UUID_CHARACTERISTIC_RAW_SENSOR_DATA.equals(characteristicUUID)) {
-            Log.i(TAG, "HANDLING RAW SENSOR INFO :: "+Arrays.toString(value));
+            Log.i(TAG, "HANDLING RAW SENSOR INFO :: " + Arrays.toString(value));
 //            handleRawSensorData(value);
         } else if (HuamiService.UUID_CHARACTERISTIC_5_ACTIVITY_DATA.equals(characteristicUUID)) {
-            Log.i(TAG, "HANDLING ACTIVITY DATA INFO :: "+Arrays.toString(value));
+            Log.i(TAG, "HANDLING ACTIVITY DATA INFO :: " + Arrays.toString(value));
 //            fetcher.onActivityData(value);
         } else if (HuamiService.UUID_CHARACTERISTIC_5_ACTIVITY_CONTROL.equals(characteristicUUID)) {
-            Log.i(TAG, "HANDLING ACTIVITY CONTROL INFO :: "+Arrays.toString(value));
+            Log.i(TAG, "HANDLING ACTIVITY CONTROL INFO :: " + Arrays.toString(value));
 //            fetcher.onActivityControl(value);
         } else {
             Log.i(TAG, "HANDLING UNHANDLED INFO for characteristic: " + characteristicUUID);
@@ -92,11 +93,11 @@ public class InfoHandler {
         }
 
         if (value.length == 13) {
-            byte[] stepsValue = new byte[] {value[1], value[2]};
+            byte[] stepsValue = new byte[]{value[1], value[2]};
             int steps = toUint16(stepsValue);
             deviceInfo.setSteps(steps);
             if (connectionCallback != null) connectionCallback.onDeviceInfoChanged(deviceInfo);
-            Log.e(TAG,"realtime steps: " + steps);
+            Log.e(TAG, "realtime steps: " + steps);
         } else {
             Log.w(TAG, "Unrecognized realtime steps value: " + Arrays.toString(value));
         }
@@ -109,107 +110,107 @@ public class InfoHandler {
 
         switch (value[0]) {
             case HuamiDeviceEvent.CALL_REJECT:
-                Log.i(TAG,"call rejected");
+                Log.i(TAG, "call rejected");
 //                callCmd.event = GBDeviceEventCallControl.Event.REJECT;
 //                evaluateGBDeviceEvent(callCmd);
                 break;
             case HuamiDeviceEvent.CALL_IGNORE:
-                Log.i(TAG,"call ignored");
-                if(bleService!=null) bleService.muteCall();
+                Log.i(TAG, "call ignored");
+                if (bleService != null) bleService.muteCall();
                 break;
             case HuamiDeviceEvent.BUTTON_PRESSED:
-                Log.i(TAG,"button pressed");
+                Log.i(TAG, "button pressed");
 //                handleButtonEvent();
                 break;
             case HuamiDeviceEvent.BUTTON_PRESSED_LONG:
-                Log.i(TAG,"button long-pressed ");
+                Log.i(TAG, "button long-pressed ");
 //                handleLongButtonEvent();
                 break;
             case HuamiDeviceEvent.START_NONWEAR:
-                Log.i(TAG,"non-wear start detected");
+                Log.i(TAG, "non-wear start detected");
 //                evaluateGBDeviceEvent(new GBDeviceEventWearState(WearingState.NOT_WEARING));
                 break;
             case HuamiDeviceEvent.ALARM_TOGGLED:
             case HuamiDeviceEvent.ALARM_CHANGED:
-                Log.i(TAG,"An alarm was toggled or changed");
+                Log.i(TAG, "An alarm was toggled or changed");
 //                TransactionBuilder builder = new TransactionBuilder("requestAlarms");
 //                requestAlarms(builder);
 //                builder.queue(getQueue());
                 break;
             case HuamiDeviceEvent.FELL_ASLEEP:
-                Log.i(TAG,"Fell asleep");
+                Log.i(TAG, "Fell asleep");
 //                evaluateGBDeviceEvent(new GBDeviceEventSleepStateDetection(SleepState.ASLEEP));
                 break;
             case HuamiDeviceEvent.WOKE_UP:
-                Log.i(TAG,"Woke up");
+                Log.i(TAG, "Woke up");
 //                evaluateGBDeviceEvent(new GBDeviceEventSleepStateDetection(SleepState.AWAKE));
                 break;
             case HuamiDeviceEvent.STEPSGOAL_REACHED:
-                Log.i(TAG,"Steps goal reached");
+                Log.i(TAG, "Steps goal reached");
                 break;
             case HuamiDeviceEvent.TICK_30MIN:
-                Log.i(TAG,"Tick 30 min (?)");
+                Log.i(TAG, "Tick 30 min (?)");
                 break;
             case HuamiDeviceEvent.FIND_PHONE_START:
                 Log.i(TAG, "find phone started");
                 if (connectionCallback != null) connectionCallback.findPhoneStateChanged(true);
                 break;
             case HuamiDeviceEvent.FIND_PHONE_STOP:
-                Log.i(TAG,"find phone stopped");
+                Log.i(TAG, "find phone stopped");
                 connectionCallback.findPhoneStateChanged(false);
                 break;
             case HuamiDeviceEvent.SILENT_MODE:
                 final boolean silentModeEnabled = value[1] == 1;
-                Log.i(TAG,MessageFormat.format("silent mode = {0}", silentModeEnabled));
+                Log.i(TAG, MessageFormat.format("silent mode = {0}", silentModeEnabled));
 //                sendPhoneSilentMode(silentModeEnabled);
 //                evaluateGBDeviceEvent(new GBDeviceEventSilentMode(silentModeEnabled));
                 break;
             case HuamiDeviceEvent.MUSIC_CONTROL:
-                Log.i(TAG,"got music control");
+                Log.i(TAG, "got music control");
 //                GBDeviceEventMusicControl deviceEventMusicControl = new GBDeviceEventMusicControl();
 
                 switch (value[1]) {
                     case 0:
-                        Log.i(TAG,"Music control play");
+                        Log.i(TAG, "Music control play");
 //                        deviceEventMusicControl.event = GBDeviceEventMusicControl.Event.PLAY;
                         break;
                     case 1:
-                        Log.i(TAG,"Music control pause");
+                        Log.i(TAG, "Music control pause");
 //                        deviceEventMusicControl.event = GBDeviceEventMusicControl.Event.PAUSE;
                         break;
                     case 3:
-                        Log.i(TAG,"Music control next");
+                        Log.i(TAG, "Music control next");
 //                        deviceEventMusicControl.event = GBDeviceEventMusicControl.Event.NEXT;
                         break;
                     case 4:
-                        Log.i(TAG,"Music control previous");
+                        Log.i(TAG, "Music control previous");
 //                        deviceEventMusicControl.event = GBDeviceEventMusicControl.Event.PREVIOUS;
                         break;
                     case 5:
-                        Log.i(TAG,"Music control volume up");
+                        Log.i(TAG, "Music control volume up");
 //                        deviceEventMusicControl.event = GBDeviceEventMusicControl.Event.VOLUMEUP;
                         break;
                     case 6:
-                        Log.i(TAG,"Music control volume down");
+                        Log.i(TAG, "Music control volume down");
 //                        deviceEventMusicControl.event = GBDeviceEventMusicControl.Event.VOLUMEDOWN;
                         break;
                     case (byte) 224:
-                        Log.i(TAG,"Music control Music app opened");
+                        Log.i(TAG, "Music control Music app opened");
                         bleService.onMusicAppOpenOnWatch(true);
                         break;
                     case (byte) 225:
-                        Log.i(TAG,"Music control Music app closed");
+                        Log.i(TAG, "Music control Music app closed");
                         bleService.onMusicAppOpenOnWatch(false);
                         break;
                     default:
-                        Log.i(TAG,"unhandled music control event " + value[1]);
+                        Log.i(TAG, "unhandled music control event " + value[1]);
                         return;
                 }
 //                evaluateGBDeviceEvent(deviceEventMusicControl);
                 break;
             case HuamiDeviceEvent.MTU_REQUEST:
                 int mtu = (value[2] & 0xff) << 8 | value[1] & 0xff;
-                Log.i(TAG,"device announced MTU of " + mtu);
+                Log.i(TAG, "device announced MTU of " + mtu);
 //                setMtu(mtu);
                 /*
                  * not really sure if this would make sense, is this event already a proof of a successful MTU

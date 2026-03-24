@@ -6,6 +6,17 @@ import android.content.SharedPreferences;
 public class Prefs {
     public static final String PREF_NAME = "prefs";
     public static final String PREF_KEEP_SERVICE_RUNNING_IN_BG = "keepServiceRunningInBG";
+    public static final String PREF_LAST_DEVICE_MAC = "lastDeviceMac";
+    public static final String PREF_AUTH_KEY = "authKey";
+    public static final String PREF_DEVICE_ADDED = "deviceAdded";
+
+
+    public static boolean getDeviceAdded(Context context) {
+        return getPrefs(context).getBoolean(PREF_DEVICE_ADDED, false);
+    }
+    public static void setDeviceAdded(Context context, boolean deviceAdded) {
+        getPrefs(context).edit().putBoolean(PREF_DEVICE_ADDED, deviceAdded).apply();
+    }
 
     private static SharedPreferences getPrefs(Context context) {
         return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
@@ -19,6 +30,19 @@ public class Prefs {
         getPrefs(context).edit().putBoolean(PREF_KEEP_SERVICE_RUNNING_IN_BG, keepServiceRunningInBG).apply();
     }
 
+    public static String getLastDeviceMac(Context context) {
+        return getPrefs(context).getString(PREF_LAST_DEVICE_MAC, null);
+    }
 
+    public static void setLastDeviceMac(Context context, String mac) {
+        getPrefs(context).edit().putString(PREF_LAST_DEVICE_MAC, mac).apply();
+    }
 
+    public static String getAuthKey(Context context) {
+        return getPrefs(context).getString(PREF_AUTH_KEY, null);
+    }
+
+    public static void setAuthKey(Context context, String authKey) {
+        getPrefs(context).edit().putString(PREF_AUTH_KEY, authKey).apply();
+    }
 }

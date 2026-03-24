@@ -55,4 +55,8 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converterGson)
     implementation(libs.loggingInterceptor)
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
+    implementation(libs.jacksonDatabind)
+    implementation(libs.jacksonAnnotations)
 }

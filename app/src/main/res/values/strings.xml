@@ -1,3 +1,17 @@
 <resources>
     <string name="app_name">GTR 2e</string>
+    <string name="login_starting">Starting login process...</string>
+    <string name="getting_tokens">Getting authentication tokens...</string>
+    <string name="login_failed_tokens">Failed to get tokens. Check credentials.</string>
+    <string name="logging_in_zepp">Logging in to Zepp...</string>
+    <string name="login_failed">Login failed.</string>
+    <string name="fetching_devices">Fetching devices...</string>
+    <string name="login_success_devices">Login successful! Found %1$d devices.</string>
+    <string name="login_success_no_devices">Login successful, but failed to fetch devices.</string>
+    <string name="error_message">Error: %1$s</string>
+    <string name="enter_credentials">Please enter both username and password</string>
+    <string name="login_success_toast">Login Success</string>
+    <string name="no_device_connected_manager_is_null">No device connected (manager null)</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="no_device_connected">No device connected</string>
 </resources>

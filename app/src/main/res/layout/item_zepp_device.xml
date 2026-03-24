@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    app:strokeColor="?attr/colorPrimary"
+    app:strokeWidth="0dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/deviceName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/comfortaa_light"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Amazfit GTR 2e" />
+
+        <TextView
+            android:id="@+id/macLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="MAC: "
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/deviceName" />
+
+        <TextView
+            android:id="@+id/macValue"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintBaseline_toBaselineOf="@id/macLabel"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/macLabel"
+            tools:text="AA:BB:CC:DD:EE:FF" />
+
+        <TextView
+            android:id="@+id/activeLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Last Active: "
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/macLabel" />
+
+        <TextView
+            android:id="@+id/activeValue"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintBaseline_toBaselineOf="@id/activeLabel"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/activeLabel"
+            tools:text="2024-03-24 10:00:00" />
+
+        <TextView
+            android:id="@+id/authKeyLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Key: "
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/activeLabel" />
+
+        <TextView
+            android:id="@+id/authKeyValue"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:fontFamily="serif-monospace"
+            android:textAlignment="viewStart"
+            android:textAllCaps="false"
+            android:textColor="?attr/colorPrimary"
+            app:layout_constraintEnd_toStartOf="@+id/copyButton"
+            app:layout_constraintStart_toEndOf="@+id/authKeyLabel"
+            app:layout_constraintTop_toTopOf="@+id/authKeyLabel"
+            tools:text="a092cd9279cb129eeaf67280009b52af" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/copyButton"
+            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:backgroundTint="@color/material_on_surface_stroke"
+            app:icon="@drawable/twotone_copy_all_24"
+            app:iconTint="@color/accent_color"
+            app:layout_constraintBottom_toBottomOf="@id/authKeyValue"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/authKeyValue"
+            app:layout_constraintTop_toTopOf="@id/authKeyValue" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

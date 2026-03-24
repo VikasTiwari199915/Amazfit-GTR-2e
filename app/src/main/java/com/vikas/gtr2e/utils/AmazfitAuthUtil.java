@@ -1,0 +1,284 @@
+package com.vikas.gtr2e.utils;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
+
+import com.vikas.gtr2e.beans.zeppAuthBeans.ZeppDevicesResponse;
+import com.vikas.gtr2e.beans.zeppAuthBeans.ZeppLoginResponse;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
+import java.util.*;
+
+import tools.jackson.databind.ObjectMapper;
+
+public class AmazfitAuthUtil {
+
+    public static final String TAG = "AMAZFIT_AUTH_UTIL";
+    public static final String UTF8 = "UTF-8";
+    public static final String ENC_KEY = "xeNtBVqzDc6tuNTh";
+    public static final String ENC_IV  = "MAAAYAAAAAAAAABg";
+    public static final String TOKEN_URL = "https://api-user-us2.zepp.com/v2/registrations/tokens";
+    public static final String LOGIN_URL = "https://api-mifit-us2.zepp.com/v2/client/login";
+    public static final String DEVICE_URL = "https://api-mifit.zepp.com/users/{0}/devices";
+
+
+    public static HashMap<String, String> getTokens(String username, String pass) throws Exception {
+        String payload = buildZeppTokenPayload(username, pass);
+        byte[] encryptedPayload = encrypt(payload.getBytes(StandardCharsets.UTF_8));
+        return sendTokenRequest(encryptedPayload);
+    }
+
+    public static ZeppLoginResponse login(String accessToken) throws Exception {
+        String payload = buildLoginPayload(accessToken);
+        HttpURLConnection conn = getZeppLoginHttpURLConnection();
+        // send payload
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(payload.getBytes(StandardCharsets.UTF_8));
+        }
+
+        int status = conn.getResponseCode();
+        System.out.println("Status: " + status);
+
+        String response = getResponse(conn, status);
+        System.out.println("Response Body: " + response);
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(response, ZeppLoginResponse.class);
+    }
+
+    public static ZeppDevicesResponse getDevices(String userId, String appToken) throws Exception {
+//        String baseUrl = "https://api-mifit.zepp.com/users/" + userId + "/devices";
+        String baseUrl = MessageFormat.format(AmazfitAuthUtil.DEVICE_URL, userId);
+
+        String r1 = UUID.randomUUID().toString();
+        String r2 = UUID.randomUUID().toString();
+
+        String query = "r=" + URLEncoder.encode(r1, UTF8) +
+                "&r=" + URLEncoder.encode(r2, UTF8) +
+                "&enableMultiDeviceOnMultiType=true" +
+                "&enableMultiDeviceOnMultiType=true" +
+                "&userid=" + URLEncoder.encode(userId, UTF8) +
+                "&appid=" + new Random().nextLong() +
+                "&channel=a100900101016" +
+                "&country=US" +
+                "&cv=151689_9.12.5" +
+                "&device=android_32" +
+                "&device_type=android_phone" +
+                "&enableMultiDevice=true" +
+                "&lang=en_US" +
+                "&timezone=Europe/London" +
+                "&v=2.0";
+
+        HttpURLConnection conn = getZeppDevicesHttpURLConnection(appToken, baseUrl, query);
+
+        int status = conn.getResponseCode();
+        System.out.println("Device Status: " + status);
+        String response = getResponse(conn, status);
+        System.out.println("Devices Response: " + response);
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(response, ZeppDevicesResponse.class);
+        } catch (Exception e) {
+            Log.e(TAG, "getDevices: ", e);
+        }
+        return null;
+    }
+
+    @NonNull
+    private static HttpURLConnection getZeppDevicesHttpURLConnection(String appToken, String baseUrl, String query) throws IOException {
+        URL url = new URL(baseUrl + "?" + query);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+
+        // headers
+        conn.setRequestProperty("hm-privacy-diagnostics", "false");
+        conn.setRequestProperty("country", "US");
+        conn.setRequestProperty("appplatform", "android_phone");
+        conn.setRequestProperty("hm-privacy-ceip", "true");
+        conn.setRequestProperty("x-request-id", UUID.randomUUID().toString());
+        conn.setRequestProperty("timezone", "Europe/London");
+        conn.setRequestProperty("channel", "a100900101016");
+        conn.setRequestProperty("vb", "202509151347");
+        conn.setRequestProperty("cv", "151689_9.12.5");
+        conn.setRequestProperty("appname", "com.huami.midong");
+        conn.setRequestProperty("v", "2.0");
+        conn.setRequestProperty("vn", "9.12.5");
+        conn.setRequestProperty("apptoken", appToken);
+        conn.setRequestProperty("lang", "en_US");
+        conn.setRequestProperty("user-agent", "Zepp/9.12.5 (Pixel 4; Android 12; Density/2.75)");
+        return conn;
+    }
+
+    private static String getResponse(HttpURLConnection conn, int status) throws IOException {
+        InputStream is = (status >= 200 && status < 300) ? conn.getInputStream() : conn.getErrorStream();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder response = new StringBuilder();
+        String line;
+
+        while ((line = reader.readLine()) != null) {
+            response.append(line);
+        }
+
+        reader.close();
+        return response.toString();
+    }
+
+    private static String buildZeppTokenPayload(String username, String pass) throws Exception {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("emailOrPhone", username);
+        payload.put("state", "REDIRECTION");
+        payload.put("client_id", "HuaMi");
+        payload.put("password", pass);
+        payload.put("redirect_uri", "https://s3-us-west-2.amazonaws.com/hm-registration/successsignin.html");
+        payload.put("region", "us-west-2");
+        payload.put("token", Arrays.asList("access", "refresh"));
+        payload.put("country_code", "US");
+        return getUrlEncodedPayload(payload);
+    }
+
+    private static HashMap<String, String> sendTokenRequest(byte[] encryptedPayload) throws Exception {
+        HttpURLConnection conn = getZeppTokenHttpURLConnection();
+        OutputStream os = conn.getOutputStream();
+        os.write(encryptedPayload);  // RAW BYTES
+        os.flush();
+        os.close();
+
+        int status = conn.getResponseCode();
+        System.out.println("Status: " + status);
+        System.out.println("Status: " + conn.getResponseMessage());
+
+        String location = conn.getHeaderField("Location");
+        System.out.println("Redirect Location: " + location);
+
+        if(status==303 && location!=null) {
+            HashMap<String, String> params = getQueryParams(location);
+            System.out.println("Access: " + params.get("access"));
+            System.out.println("Refresh: " + params.get("refresh"));
+            return params;
+        } else {
+            throw new Exception("Error: "+status+"-"+conn.getResponseMessage());
+        }
+    }
+
+    @NonNull
+    private static HttpURLConnection getZeppTokenHttpURLConnection() throws IOException {
+        URL url = new URL(AmazfitAuthUtil.TOKEN_URL);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+        conn.setRequestMethod("POST");
+        conn.setDoOutput(true);
+        conn.setInstanceFollowRedirects(false);
+
+        // headers (same as yours)
+        conn.setRequestProperty("content-type", "application/x-www-form-urlencoded");
+        conn.setRequestProperty("app_name", "com.huami.midong");
+        conn.setRequestProperty("appname", "com.huami.midong");
+        conn.setRequestProperty("cv", "151689_9.12.5");
+        conn.setRequestProperty("v", "2.0");
+        conn.setRequestProperty("appplatform", "android_phone");
+        conn.setRequestProperty("vb", "202509151347");
+        conn.setRequestProperty("vn", "9.12.5");
+        conn.setRequestProperty("user-agent", "Zepp/9.12.5 (Pixel 4; Android 12; Density/2.75)");
+        conn.setRequestProperty("x-hm-ekv", "1");
+        conn.setRequestProperty("accept-encoding", "gzip");
+        return conn;
+    }
+
+    private static byte[] encrypt(byte[] data) throws Exception {
+        byte[] key = AmazfitAuthUtil.ENC_KEY.getBytes(StandardCharsets.UTF_8);
+        byte[] iv  = AmazfitAuthUtil.ENC_IV.getBytes(StandardCharsets.UTF_8);
+
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
+        IvParameterSpec ivSpec = new IvParameterSpec(iv);
+
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
+        return cipher.doFinal(data);
+    }
+
+    private static HashMap<String, String> getQueryParams(String url) throws Exception {
+        URI uri = new URI(url);
+        String query = uri.getQuery();
+
+        HashMap<String, String> params = new HashMap<>();
+
+        for (String param : query.split("&")) {
+            String[] pair = param.split("=", 2);
+            String key = URLDecoder.decode(pair[0], UTF8);
+            String value = pair.length > 1 ? URLDecoder.decode(pair[1], UTF8) : "";
+            params.put(key, value);
+        }
+        return params;
+    }
+
+    private static HttpURLConnection getZeppLoginHttpURLConnection() throws IOException {
+        URL url = new URL(AmazfitAuthUtil.LOGIN_URL);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+        conn.setRequestMethod("POST");
+        conn.setDoOutput(true);
+        // headers (exact match)
+        conn.setRequestProperty("app_name", "com.huami.webapp");
+        conn.setRequestProperty("appname", "com.huami.webapp");
+        conn.setRequestProperty("origin", "https://user.zepp.com");
+        conn.setRequestProperty("referer", "https://user.zepp.com/");
+        conn.setRequestProperty("user-agent", "Mozilla/5.0 (X11; Linux x86_64; rv:133.0) Gecko/20100101 Firefox/133.0");
+        conn.setRequestProperty("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
+        conn.setRequestProperty("accept", "application/json, text/plain, */*");
+        conn.setRequestProperty("accept-language", "en-US,en;q=0.5");
+        return conn;
+    }
+
+    private static String buildLoginPayload(String accessToken) throws Exception {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("code", accessToken);
+        payload.put("device_id", UUID.randomUUID().toString());
+        payload.put("device_model", "android_phone");
+        payload.put("app_version", "9.12.5");
+        payload.put("dn", "api-mifit.zepp.com,api-user.zepp.com,api-mifit.zepp.com,api-watch.zepp.com,app-analytics.zepp.com,auth.zepp.com,api-analytics.zepp.com");
+        payload.put("third_name", "huami");
+        payload.put("source", "com.huami.watch.hmwatchmanager:9.12.5:151689");
+        payload.put("app_name", "com.huami.midong");
+        payload.put("country_code", "US");
+        payload.put("grant_type", "access_token");
+        payload.put("allow_registration", "false");
+        payload.put("lang", "en");
+        payload.put("countryState", "US-NY");
+        return getUrlEncodedPayload(payload);
+    }
+
+    private static String getUrlEncodedPayload(Map<String, Object> payload) throws UnsupportedEncodingException {
+        StringBuilder result = new StringBuilder();
+
+        for (Map.Entry<String, Object> entry : payload.entrySet()) {
+            if (entry.getValue() instanceof List) {
+                for (String val : (List<String>) entry.getValue()) {
+                    if (result.length() > 0) result.append("&");
+                    result.append(URLEncoder.encode(entry.getKey(), UTF8));
+                    result.append("=");
+                    result.append(URLEncoder.encode(val, UTF8));
+                }
+            } else {
+                if (result.length() > 0) result.append("&");
+                result.append(URLEncoder.encode(entry.getKey(), UTF8));
+                result.append("=");
+                result.append(URLEncoder.encode(entry.getValue().toString(), UTF8));
+            }
+        }
+
+        System.out.println(result);
+        return result.toString();
+    }
+}

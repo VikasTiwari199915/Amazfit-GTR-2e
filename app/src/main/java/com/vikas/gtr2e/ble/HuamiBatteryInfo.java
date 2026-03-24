@@ -1,8 +1,10 @@
-package com.vikas.gtr2e;
+package com.vikas.gtr2e.ble;
 
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+
+import com.vikas.gtr2e.GTR2eManager;
 
 /**
  * Parser for Huami device battery information

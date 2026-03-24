@@ -7,6 +7,8 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.vikas.gtr2e.ble.HuamiBatteryInfo;
+
 public class TestActivity extends AppCompatActivity {
     private static final String TAG = "TestActivity";
     

@@ -4,26 +4,27 @@ import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.IBinder;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.vikas.gtr2e.beans.DeviceInfo;
+import com.vikas.gtr2e.ble.HuamiBatteryInfo;
 import com.vikas.gtr2e.services.GTR2eBleService;
-import com.vikas.gtr2e.utils.IncomingCallReceiver;
 import com.vikas.gtr2e.utils.Prefs;
+
+import lombok.Getter;
 
 public class GTR2eManager {
     private static final String TAG = "GTR2eManager";
 
+    @Getter
     private GTR2eBleService bleService;
     private ConnectionListener connectionListener;
 
     private boolean bound = false;
     private static GTR2eManager instance;
-    private final Context applicationContext; // Renamed for clarity, always application context
+    private final Context applicationContext;
 
     public void performAction(String actionCode, String... args) {
         if (bleService == null || !bound) {
@@ -181,6 +182,7 @@ public class GTR2eManager {
              return;
         }
         Log.d(TAG, "Starting scan for GTR 2e devices");
+
         connect(null);
     }
 
@@ -316,10 +318,6 @@ public class GTR2eManager {
     }
 
 
-    public GTR2eBleService getBleService() {
-        return bleService;
-    }
-
     public void onMainActivityResumed() {
         if (!bound && bleService == null) {
             Log.w(TAG, "GTR2eManager onMainActivityResumed: Not bound. Attempting to re-bind.");
@@ -329,4 +327,5 @@ public class GTR2eManager {
              connectionListener.onBackgroundServiceBound(true);
         }
     }
+
 }

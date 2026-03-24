@@ -2,7 +2,7 @@ package com.vikas.gtr2e.beans;
 
 import androidx.annotation.NonNull;
 
-import com.vikas.gtr2e.HuamiBatteryInfo;
+import com.vikas.gtr2e.ble.HuamiBatteryInfo;
 
 public class DeviceInfo {
     String deviceName;
