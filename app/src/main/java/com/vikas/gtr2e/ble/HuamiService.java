@@ -35,6 +35,8 @@ public class HuamiService {
     public static final UUID UUID_SERVICE_MIBAND_SERVICE = UUID.fromString(String.format(BASE_UUID, "FEE0"));
     public static final UUID UUID_SERVICE_MIBAND2_SERVICE = UUID.fromString(String.format(BASE_UUID, "FEE1"));
     public static final UUID UUID_SERVICE_HEART_RATE = UUID.fromString(String.format(BASE_UUID, "180D"));
+    public static final UUID UUID_CHARACTERISTIC_CURRENT_TIME = UUID.fromString((String.format(BASE_UUID, "2A2B")));
+
     public static final UUID UUID_SERVICE_FIRMWARE_SERVICE = UUID.fromString("00001530-0000-3512-2118-0009af100700");
 
     public static final UUID UUID_CHARACTERISTIC_FIRMWARE_CONTROL = UUID.fromString("00001531-0000-3512-2118-0009af100700");

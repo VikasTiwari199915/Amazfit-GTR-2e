@@ -14,4 +14,5 @@
     <string name="no_device_connected_manager_is_null">No device connected (manager null)</string>
     <string name="disconnected">Disconnected</string>
     <string name="no_device_connected">No device connected</string>
+    <string name="searching_for_devices">Searching for devices...</string>
 </resources>

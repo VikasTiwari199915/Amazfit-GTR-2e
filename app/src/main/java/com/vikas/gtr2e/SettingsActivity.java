@@ -1,6 +1,8 @@
 package com.vikas.gtr2e;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.widget.Switch;
 import android.widget.TextView;
 
@@ -11,6 +13,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.vikas.gtr2e.databinding.ActivitySettingsBinding;
+import com.vikas.gtr2e.utils.MediaUtil;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -34,17 +37,24 @@ public class SettingsActivity extends AppCompatActivity {
         });
 
         initViews();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         loadSettings();
     }
 
     private void initViews() {
-        switchNotifications = findViewById(R.id.switch_notifications);
-        switchHeartRate = findViewById(R.id.switch_heart_rate);
-        switchAutoSync = findViewById(R.id.switch_auto_sync);
-        tvDeviceInfo = findViewById(R.id.tv_device_info);
+        switchNotifications = binding.switchNotifications;
+        switchHeartRate = binding.switchHeartRate;
+        switchAutoSync = binding.switchAutoSync;
+        tvDeviceInfo = binding.tvDeviceInfo;
 
-        switchNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            // Save notification setting
+        switchNotifications.setOnClickListener(v -> {
+            // Open Notification Access settings
+            Intent intent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
+            startActivity(intent);
         });
 
         switchHeartRate.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -57,8 +67,11 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void loadSettings() {
-        // Load settings from SharedPreferences
-        switchNotifications.setChecked(true);
+        // Check if Notification Access is granted
+        boolean hasNotificationAccess = MediaUtil.isNotificationListenerEnabled(this);
+        switchNotifications.setChecked(hasNotificationAccess);
+
+        // Load other settings from SharedPreferences (mocked for now)
         switchHeartRate.setChecked(true);
         switchAutoSync.setChecked(true);
 

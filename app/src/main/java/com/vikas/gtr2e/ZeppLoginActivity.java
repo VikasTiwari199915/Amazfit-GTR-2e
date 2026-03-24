@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.vikas.gtr2e.beans.zeppAuthBeans.ZeppDeviceItem;
@@ -26,7 +26,6 @@ import com.vikas.gtr2e.beans.zeppAuthBeans.ZeppLoginResponse;
 import com.vikas.gtr2e.utils.AmazfitAuthUtil;
 import com.vikas.gtr2e.utils.Prefs;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,7 +36,7 @@ public class ZeppLoginActivity extends AppCompatActivity {
     private TextInputEditText usernameEdit;
     private TextInputEditText passwordEdit;
     private MaterialButton loginButton, continueButton;
-    private ProgressBar progressBar;
+    private CircularProgressIndicator progressBar;
     private TextView statusText, titleText;
     private RecyclerView devicesRecyclerView;
     private ZeppDeviceAdapter adapter;

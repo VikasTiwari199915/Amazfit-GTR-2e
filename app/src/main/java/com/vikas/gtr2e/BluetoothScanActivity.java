@@ -31,8 +31,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
 import com.vikas.gtr2e.utils.Prefs;
@@ -112,9 +110,10 @@ public class BluetoothScanActivity extends AppCompatActivity {
         AssociationRequest pairingRequest = new AssociationRequest.Builder()
                 .addDeviceFilter(deviceFilter)
                 .setSingleDevice(false)
+                .setDeviceProfile(AssociationRequest.DEVICE_PROFILE_WATCH)
                 .build();
 
-        scanStatus.setText("Searching for devices...");
+        scanStatus.setText(R.string.searching_for_devices);
         scanProgress.setVisibility(View.VISIBLE);
         rescanButton.setEnabled(false);
 

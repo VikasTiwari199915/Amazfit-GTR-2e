@@ -4,6 +4,8 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.util.Log;
 
 import com.vikas.gtr2e.beans.DeviceInfo;
+import com.vikas.gtr2e.enums.MusicControl;
+import com.vikas.gtr2e.interfaces.ConnectionCallback;
 import com.vikas.gtr2e.services.GTR2eBleService;
 
 import java.nio.charset.StandardCharsets;
@@ -15,7 +17,7 @@ public class InfoHandler {
     public static final String TAG = "InfoHandler";
 
     public static void onInfoReceived(BluetoothGattCharacteristic characteristic, byte[] value,
-                                      GTR2eBleService.ConnectionCallback connectionCallback, GTR2eBleService bleService,
+                                      ConnectionCallback connectionCallback, GTR2eBleService bleService,
                                       DeviceInfo deviceInfo) {
         final UUID characteristicUUID = characteristic.getUuid();
 
@@ -86,7 +88,7 @@ public class InfoHandler {
     }
 
 
-    private static void handleRealtimeSteps(byte[] value, DeviceInfo deviceInfo, GTR2eBleService.ConnectionCallback connectionCallback) {
+    private static void handleRealtimeSteps(byte[] value, DeviceInfo deviceInfo, ConnectionCallback connectionCallback) {
         if (value == null) {
             Log.i(TAG, "realtime steps: value is null");
             return;
@@ -103,7 +105,7 @@ public class InfoHandler {
         }
     }
 
-    private static void handleDeviceEvent(byte[] value, GTR2eBleService.ConnectionCallback connectionCallback, GTR2eBleService bleService, DeviceInfo deviceInfo) {
+    private static void handleDeviceEvent(byte[] value, ConnectionCallback connectionCallback, GTR2eBleService bleService, DeviceInfo deviceInfo) {
         if (value == null || value.length == 0) {
             return;
         }
@@ -111,6 +113,7 @@ public class InfoHandler {
         switch (value[0]) {
             case HuamiDeviceEvent.CALL_REJECT:
                 Log.i(TAG, "call rejected");
+                connectionCallback.onCallRejected();
 //                callCmd.event = GBDeviceEventCallControl.Event.REJECT;
 //                evaluateGBDeviceEvent(callCmd);
                 break;
@@ -167,32 +170,30 @@ public class InfoHandler {
                 break;
             case HuamiDeviceEvent.MUSIC_CONTROL:
                 Log.i(TAG, "got music control");
-//                GBDeviceEventMusicControl deviceEventMusicControl = new GBDeviceEventMusicControl();
-
                 switch (value[1]) {
                     case 0:
                         Log.i(TAG, "Music control play");
-//                        deviceEventMusicControl.event = GBDeviceEventMusicControl.Event.PLAY;
+                        bleService.setMusicControl(MusicControl.PLAY);
                         break;
                     case 1:
                         Log.i(TAG, "Music control pause");
-//                        deviceEventMusicControl.event = GBDeviceEventMusicControl.Event.PAUSE;
+                        bleService.setMusicControl(MusicControl.PAUSE);
                         break;
                     case 3:
                         Log.i(TAG, "Music control next");
-//                        deviceEventMusicControl.event = GBDeviceEventMusicControl.Event.NEXT;
+                        bleService.setMusicControl(MusicControl.NEXT);
                         break;
                     case 4:
                         Log.i(TAG, "Music control previous");
-//                        deviceEventMusicControl.event = GBDeviceEventMusicControl.Event.PREVIOUS;
+                        bleService.setMusicControl(MusicControl.PREVIOUS);
                         break;
                     case 5:
                         Log.i(TAG, "Music control volume up");
-//                        deviceEventMusicControl.event = GBDeviceEventMusicControl.Event.VOLUMEUP;
+                        bleService.setMusicControl(MusicControl.VOLUME_UP);
                         break;
                     case 6:
                         Log.i(TAG, "Music control volume down");
-//                        deviceEventMusicControl.event = GBDeviceEventMusicControl.Event.VOLUMEDOWN;
+                        bleService.setMusicControl(MusicControl.VOLUME_DOWN);
                         break;
                     case (byte) 224:
                         Log.i(TAG, "Music control Music app opened");
@@ -211,6 +212,7 @@ public class InfoHandler {
             case HuamiDeviceEvent.MTU_REQUEST:
                 int mtu = (value[2] & 0xff) << 8 | value[1] & 0xff;
                 Log.i(TAG, "device announced MTU of " + mtu);
+                bleService.setMtu(mtu);
 //                setMtu(mtu);
                 /*
                  * not really sure if this would make sense, is this event already a proof of a successful MTU

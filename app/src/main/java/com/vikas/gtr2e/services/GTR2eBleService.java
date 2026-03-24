@@ -3,6 +3,11 @@ package com.vikas.gtr2e.services;
 import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_INDICATE;
 import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_NOTIFY;
 import static com.vikas.gtr2e.ble.HuamiService.COMMAND_DO_NOT_DISTURB_AUTOMATIC;
+import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_ALBUM;
+import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_ARTIST;
+import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_DURATION;
+import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_STATE;
+import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_TRACK;
 import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_VOLUME;
 
 import android.annotation.SuppressLint;
@@ -18,9 +23,14 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.MediaMetadata;
+import android.media.session.MediaController;
+import android.media.session.PlaybackState;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
@@ -29,6 +39,8 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import com.vikas.gtr2e.beans.DeviceInfo;
+import com.vikas.gtr2e.beans.MusicBean;
+import com.vikas.gtr2e.beans.MusicStateBean;
 import com.vikas.gtr2e.ble.BleNamesResolver;
 import com.vikas.gtr2e.ble.Huami2021ChunkedDecoder;
 import com.vikas.gtr2e.ble.Huami2021ChunkedEncoder;
@@ -36,15 +48,22 @@ import com.vikas.gtr2e.ble.Huami2021Handler;
 import com.vikas.gtr2e.ble.HuamiBatteryInfo;
 import com.vikas.gtr2e.ble.HuamiService;
 import com.vikas.gtr2e.ble.InfoHandler;
+import com.vikas.gtr2e.enums.MusicControl;
+import com.vikas.gtr2e.interfaces.ConnectionCallback;
+import com.vikas.gtr2e.utils.ConversionUtil;
 import com.vikas.gtr2e.utils.IncomingCallReceiver;
+import com.vikas.gtr2e.utils.MediaUtil;
 import com.vikas.gtr2e.utils.NotificationUtility;
 import com.vikas.gtr2e.utils.Prefs;
+import com.vikas.gtr2e.utils.StringUtils;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Optional;
@@ -99,6 +118,13 @@ public class GTR2eBleService extends Service {
     Huami2021Handler huami2021Handler = (type, payload) -> handleChunkedRead(payload);
     private int mMTU = MIN_MTU;
     private boolean isBleBusy = false;
+
+
+    //watch status
+    private boolean isMusicAppOpen = false;
+
+    private MediaController currentController;
+    private MediaController.Callback mediaCallback;
 
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
         @Override
@@ -277,7 +303,7 @@ public class GTR2eBleService extends Service {
         NotificationUtility.createNotificationChannel(context);
         NotificationUtility.startAsForegroundService(GTR2eBleService.this, deviceInfo.isConnected());
         deviceInfo.setDeviceName("Amazfit GTR 2e");
-        registerCallReceiver();
+//        registerCallReceiver();
     }
 
     private void initializeBluetooth() {
@@ -382,6 +408,7 @@ public class GTR2eBleService extends Service {
                         huami2021ChunkedEncoder = new Huami2021ChunkedEncoder(mMTU);
                     } else if (huami2021ChunkedEncoder != null) { // Corrected from huami2021ChunkedDecoder
                         huami2021ChunkedEncoder.reset();
+                        huami2021ChunkedEncoder.setMTU(mMTU);
                     }
                 }
                 Log.d(TAG, "Characteristic found: " + BleNamesResolver.resolveCharacteristicName(characteristic.getUuid().toString()));
@@ -395,7 +422,7 @@ public class GTR2eBleService extends Service {
         }
     }
 
-    // endregion
+
 
     //region AUTH PROCESS
     private void startAuthChallenge1stStep() {
@@ -533,7 +560,9 @@ public class GTR2eBleService extends Service {
         } else {
             Log.e(TAG, "Huami service not found after auth.");
         }
+        updateMediaController();
     }
+    // endregion
 
     //region QUEUE OPERATIONS HELPER METHODS
     private void enqueueReadCharacteristic(UUID serviceUuid, UUID characteristicUuid) {
@@ -809,26 +838,147 @@ public class GTR2eBleService extends Service {
     }
 
     public void onMusicAppOpenOnWatch(boolean opened) {
-        // Implementation based on how your watch communicates this
+        this.isMusicAppOpen = opened;
+        //Send the music state after a small delay. If we send it right as the app notifies us that it opened, it won't be recognized.
+//        MediaUtil.refresh(getApplicationContext());
+        if(opened) {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                sendMusicStateToDevice(MediaUtil.bufferMusicBean, MediaUtil.bufferMusicStateBean);
+                onSetPhoneVolume(MediaUtil.getPhoneVolume(getApplicationContext()));
+            }, 100);
+        }
+    }
+
+    protected void sendMusicStateToDevice(final MusicBean musicBean, final MusicStateBean musicStateBean) {
+        if(!isMusicAppOpen) {
+            return;
+        }
+        if (characteristicChunked2021Write == null) {
+            return;
+        }
+        if (musicStateBean == null) {
+            return;
+        }
+        writeToChunkedOld(3, encodeMusicState(musicBean, musicStateBean));
+        Log.i(TAG,"sendMusicStateToDevice: "+ musicBean+", "+musicStateBean);
+    }
+
+    public static byte[] encodeMusicState(final MusicBean musicSpec, final MusicStateBean musicStateBean) {
+        String artist = "";
+        String album = "";
+        String track = "";
+
+        byte flags = 0x00;
+        int length = 1;
+
+        if (musicStateBean != null) {
+            length += 4;
+            flags |= MUSIC_FLAG_STATE;
+        }
+
+        if (musicSpec != null) {
+            artist = StringUtils.truncate(musicSpec.artist, 80);
+            album = StringUtils.truncate(musicSpec.album, 80);
+            track = StringUtils.truncate(musicSpec.track, 80);
+
+            if (artist.getBytes().length > 0) {
+                length += artist.getBytes().length + 1;
+                flags |= MUSIC_FLAG_ARTIST;
+            }
+            if (album.getBytes().length > 0) {
+                length += album.getBytes().length + 1;
+                flags |= MUSIC_FLAG_ALBUM;
+            }
+            if (track.getBytes().length > 0) {
+                length += track.getBytes().length + 1;
+                flags |= MUSIC_FLAG_TRACK;
+            }
+            if (musicSpec.duration != 0) {
+                length += 2;
+                flags |= MUSIC_FLAG_DURATION;
+            }
+        }
+
+        ByteBuffer buf = ByteBuffer.allocate(length);
+        buf.order(ByteOrder.LITTLE_ENDIAN);
+        buf.put(flags);
+
+        if (musicStateBean != null) {
+            byte state;
+            if (musicStateBean.state == (byte) MusicStateBean.STATE_PLAYING) {
+                state = 1;
+            } else {
+                state = 0;
+            }
+
+            buf.put(state);
+            buf.put((byte) 0);
+            buf.putShort((short) musicStateBean.position);
+        }
+
+        if (musicSpec != null) {
+            if (artist.getBytes().length > 0) {
+                buf.put(artist.getBytes());
+                buf.put((byte) 0);
+            }
+            if (album.getBytes().length > 0) {
+                buf.put(album.getBytes());
+                buf.put((byte) 0);
+            }
+            if (track.getBytes().length > 0) {
+                buf.put(track.getBytes());
+                buf.put((byte) 0);
+            }
+            if (musicSpec.duration != 0) {
+                buf.putShort((short) musicSpec.duration);
+            }
+        }
+
+        return buf.array();
     }
 
     public void setCallStatus(CALL_STATUS callStatus, String caller) {
+
+        Log.e(TAG, "CALLER_NAME = "+caller);
+
         if (callStatus == CALL_STATUS.INCOMING) {
             if (caller == null || caller.trim().isEmpty()) {
                 caller = "Unknown";
             }
+            byte[] prefix = new byte[]{3, 0, 0, 0, 0, 0};
             byte[] message = caller.getBytes(StandardCharsets.UTF_8);
-            int length = 10 + message.length;
+            byte[] suffix = new byte[]{0, 0, 0, 2};
+            int length = prefix.length + message.length + suffix.length;
             ByteBuffer buf = ByteBuffer.allocate(length);
             buf.order(ByteOrder.LITTLE_ENDIAN);
-            buf.put(new byte[]{3, 0, 0, 0, 0, 0}); // Prefix - for call status info
+            buf.put(prefix); // Prefix - for call status info
             buf.put(message);
-            buf.put(new byte[]{0, 0, 0, 2}); // Suffix - end of message
+            buf.put(suffix); // Suffix - end of message
             writeToChunkedOld(0, buf.array());
 
         } else if ((callStatus == CALL_STATUS.PICKED) || (callStatus == CALL_STATUS.ENDED)) {
             writeToChunkedOld(0, new byte[]{3, 3, 0, 0, 0, 0});
         }
+    }
+
+    public void setTime() {
+        Calendar timestamp = ConversionUtil.createCalendar();
+        timestamp.set(2025,9,20);
+        byte[] year = ConversionUtil.fromUint16(timestamp.get(Calendar.YEAR));
+        byte[] timeByte = new byte[] {
+                year[0],
+                year[1],
+                ConversionUtil.fromUint8(timestamp.get(Calendar.MONTH) + 1),
+                ConversionUtil.fromUint8(timestamp.get(Calendar.DATE)),
+                ConversionUtil.fromUint8(timestamp.get(Calendar.HOUR_OF_DAY)),
+                ConversionUtil.fromUint8(timestamp.get(Calendar.MINUTE)),
+                ConversionUtil.fromUint8(timestamp.get(Calendar.SECOND)),
+                ConversionUtil.dayOfWeekToRawBytes(timestamp),
+                0, // fractions256 (not set)
+                // 0 (DST offset?) Mi2
+                // k (tz) Mi2
+        };
+        enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_CURRENT_TIME, timeByte, "Set Current Time");
     }
 
     public void updateConnectionState() {
@@ -844,16 +994,16 @@ public class GTR2eBleService extends Service {
         super.onTaskRemoved(rootIntent);
     }
 
-    private void registerCallReceiver() {
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
-        filter.addAction("com.vikas.gtr2e.MUTE_CALL");
-        try {
-            ContextCompat.registerReceiver(context, new IncomingCallReceiver(GTR2eBleService.this), filter, ContextCompat.RECEIVER_EXPORTED);
-        } catch (Exception e) {
-            Log.w(TAG, "Call receiver already registered or error: " + e.getMessage());
-        }
-    }
+//    private void registerCallReceiver() {
+//        IntentFilter filter = new IntentFilter();
+//        filter.addAction(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
+//        filter.addAction("com.vikas.gtr2e.MUTE_CALL");
+//        try {
+//            ContextCompat.registerReceiver(context, new IncomingCallReceiver(GTR2eBleService.this), filter, ContextCompat.RECEIVER_EXPORTED);
+//        } catch (Exception e) {
+//            Log.w(TAG, "Call receiver already registered or error: " + e.getMessage());
+//        }
+//    }
 
     //mute call
     public void muteCall() {
@@ -872,29 +1022,92 @@ public class GTR2eBleService extends Service {
         return bytes;
     }
 
-    public enum CALL_STATUS {INCOMING, PICKED, ENDED}
-
-    public interface ConnectionCallback {
-        void onDeviceConnected(BluetoothDevice device);
-
-        void onDeviceDisconnected();
-
-        void onAuthenticated();
-
-        void onError(String error);
-
-        void onBatteryDataReceived(HuamiBatteryInfo batteryInfo);
-
-        void onHeartRateChanged(int heartRate);
-
-        void onHeartRateMonitoringChanged(boolean enabled);
-
-        void findPhoneStateChanged(boolean started);
-
-        void pendingBleProcessChanged(int count);
-
-        void onDeviceInfoChanged(DeviceInfo deviceInfo);
+    public void setMtu(int mtu) {
+        if (mtu < MIN_MTU) {
+            Log.e(TAG, "Device announced unreasonable low MTU of "+mtu+", ignoring");
+            return;
+        }
+        mMTU = mtu;
+        if (huami2021ChunkedEncoder != null){
+            huami2021ChunkedEncoder.setMTU(mMTU);
+        }
     }
+
+    public void setMusicControl(MusicControl control) {
+        MediaUtil.setMediaState(getApplicationContext(), control);
+        if(control == MusicControl.VOLUME_UP || control == MusicControl.VOLUME_DOWN) {
+            onSetPhoneVolume(MediaUtil.getPhoneVolume(getApplicationContext()));
+        }
+//        else {
+//            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+//                MediaUtil.refresh(getApplicationContext());
+//                sendMusicStateToDevice(MediaUtil.bufferMusicBean, MediaUtil.bufferMusicStateBean);
+//            },100);
+//        }
+    }
+
+    public void updateMediaController() {
+        MediaController newController = MediaUtil.getMediaController(getApplicationContext());
+
+        if (newController == null) return;
+
+        // same session → ignore
+        if (currentController != null && currentController.getSessionToken().equals(newController.getSessionToken())) {
+            return;
+        }
+
+        Log.d("MEDIA", "Switching media session");
+
+        // unregister old
+        if (currentController != null && mediaCallback != null) {
+            currentController.unregisterCallback(mediaCallback);
+        }
+
+        currentController = newController;
+
+        // create callback
+        mediaCallback = new MediaController.Callback() {
+            @Override
+            public void onPlaybackStateChanged(PlaybackState state) {
+                if (state == null) {
+                    Log.d("MEDIA", "State null → refreshing controller");
+                    updateMediaController();
+                    return;
+                }
+                Log.d("MEDIA", "Playback changed");
+                MusicStateBean newState = MediaUtil.extractMusicStateBean(state);
+                if(!MediaUtil.bufferMusicStateBean.equals(newState)) {
+                    MediaUtil.bufferMusicStateBean = MediaUtil.extractMusicStateBean(state);
+                    sendMusicStateToDevice(MediaUtil.bufferMusicBean, MediaUtil.bufferMusicStateBean);
+                }
+
+            }
+
+            @Override
+            public void onMetadataChanged(MediaMetadata metadata) {
+                if (metadata == null) {
+                    Log.d("MEDIA", "Metadata null → refreshing controller");
+                    updateMediaController();
+                    return;
+                }
+                Log.d("MEDIA", "Metadata changed");
+                MusicBean newMetaData = MediaUtil.extractMusicBean(metadata);
+                if(!MediaUtil.bufferMusicBean.equals(newMetaData)) {
+                    MediaUtil.bufferMusicBean = MediaUtil.extractMusicBean(metadata);
+                    sendMusicStateToDevice(MediaUtil.bufferMusicBean, MediaUtil.bufferMusicStateBean);
+                }
+            }
+        };
+
+        currentController.registerCallback(mediaCallback);
+
+        // push initial state immediately
+        MediaUtil.bufferMusicBean = MediaUtil.extractMusicBean(currentController.getMetadata());
+        MediaUtil.bufferMusicStateBean = MediaUtil.extractMusicStateBean(currentController.getPlaybackState());
+        sendMusicStateToDevice(MediaUtil.bufferMusicBean, MediaUtil.bufferMusicStateBean);
+    }
+
+    public enum CALL_STATUS {INCOMING, PICKED, ENDED}
 
     // Binder class for clients to access this service
     public class LocalBinder extends Binder {

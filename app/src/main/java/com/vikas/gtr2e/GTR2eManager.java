@@ -10,7 +10,9 @@ import android.util.Log;
 
 import com.vikas.gtr2e.beans.DeviceInfo;
 import com.vikas.gtr2e.ble.HuamiBatteryInfo;
+import com.vikas.gtr2e.interfaces.ConnectionCallback;
 import com.vikas.gtr2e.services.GTR2eBleService;
+import com.vikas.gtr2e.services.GTR2eCallService;
 import com.vikas.gtr2e.utils.Prefs;
 
 import lombok.Getter;
@@ -61,7 +63,8 @@ public class GTR2eManager {
                 bleService.onSetPhoneVolume(Float.parseFloat(args[0]));
                 break;
             case "TEST":
-                bleService.setCallStatus(GTR2eBleService.CALL_STATUS.INCOMING, "Hello World!");
+//                bleService.setCallStatus(GTR2eBleService.CALL_STATUS.INCOMING, "Hello World!");
+                bleService.setTime();
             default:
                 break;
         }
@@ -90,7 +93,7 @@ public class GTR2eManager {
             Log.e(TAG, "initBleServiceCallback called but bleService is null");
             return;
         }
-        bleService.setConnectionCallback(new GTR2eBleService.ConnectionCallback() {
+        bleService.setConnectionCallback(new ConnectionCallback() {
             @Override
             public void onDeviceConnected(BluetoothDevice device) {
                 Log.d(TAG, "Connected to GTR 2e: " + device.getAddress());
@@ -148,6 +151,17 @@ public class GTR2eManager {
                 if (connectionListener != null) {
                     connectionListener.onDeviceInfoChanged(deviceInfo);
                 }
+            }
+
+            @Override
+            public void onCallRejected() {
+                Log.d(TAG, "onCallRejected: Received call reject event from watch. Using InCallService.");
+                GTR2eCallService.rejectActiveCall();
+            }
+
+            @Override
+            public void setMtu(int mtu) {
+
             }
 
             @Override

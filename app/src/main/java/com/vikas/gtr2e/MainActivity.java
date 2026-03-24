@@ -38,6 +38,7 @@ import com.vikas.gtr2e.beans.DeviceInfo;
 import com.vikas.gtr2e.ble.HuamiBatteryInfo;
 import com.vikas.gtr2e.databinding.ActivityMainBinding;
 import com.vikas.gtr2e.utils.AppAutoUpdater;
+import com.vikas.gtr2e.utils.MediaUtil;
 import com.vikas.gtr2e.utils.Prefs;
 
 import java.io.File;
@@ -78,6 +79,10 @@ public class MainActivity extends AppCompatActivity {
         deviceAddedJustNow = getIntent().getBooleanExtra("DEVICE_ADDED_JUST_NOW", false);
 
         initViews();
+        if(!MediaUtil.isNotificationListenerEnabled(this)){
+            Intent intent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
+            startActivity(intent);
+        }
         if(checkPermissions()){
             initBluetooth();
             initGTR2eManager();
@@ -310,12 +315,13 @@ public class MainActivity extends AppCompatActivity {
                 Manifest.permission.BLUETOOTH_ADMIN,
                 Manifest.permission.BLUETOOTH_CONNECT,
                 Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
+//                Manifest.permission.ACCESS_FINE_LOCATION,
+//                Manifest.permission.ACCESS_COARSE_LOCATION,
+//                Manifest.permission.MODIFY_AUDIO_SETTINGS,
                 Manifest.permission.READ_PHONE_STATE,
                 Manifest.permission.READ_CONTACTS,
-                Manifest.permission.READ_CALL_LOG,
-                Manifest.permission.MODIFY_AUDIO_SETTINGS);
+                Manifest.permission.READ_CALL_LOG
+        );
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions.add(Manifest.permission.POST_NOTIFICATIONS);
