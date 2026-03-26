@@ -74,7 +74,7 @@ public class BluetoothScanActivity extends AppCompatActivity {
     private void startScanWithPermissionCheck() {
         if (bluetoothAdapter == null) {
             Toast.makeText(this, "Bluetooth not supported on this device", Toast.LENGTH_SHORT).show();
-            scanStatus.setText("Bluetooth not supported");
+            scanStatus.setText(R.string.bluetooth_not_supported);
             scanProgress.setVisibility(View.GONE);
             return;
         }
@@ -106,6 +106,12 @@ public class BluetoothScanActivity extends AppCompatActivity {
                         .setDeviceAddress(Prefs.getLastDeviceMac(getApplicationContext()))
                         .build())
                 .build();
+//        BluetoothLeDeviceFilter deviceFilter = new BluetoothLeDeviceFilter.Builder()
+//                        .setNamePattern(Pattern.compile("Amazfit GTR 2e"))
+//                        .build();
+//        BluetoothLeDeviceFilter deviceFilter = new BluetoothLeDeviceFilter.Builder()
+//                        .setScanFilter(new ScanFilter.Builder().setDeviceName("Amazfit GTR 2e").build())
+//                        .build();
 
         AssociationRequest pairingRequest = new AssociationRequest.Builder()
                 .addDeviceFilter(deviceFilter)
@@ -138,9 +144,11 @@ public class BluetoothScanActivity extends AppCompatActivity {
         public void onAssociationCreated(@NonNull AssociationInfo associationInfo) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 Log.d(TAG, "Association created: " + associationInfo.getDeviceMacAddress());
+                Prefs.setLastDeviceAssociationId(getApplicationContext(), associationInfo.getId());
             } else {
                 Log.d(TAG, "Association created");
             }
+
         }
 
         @Override

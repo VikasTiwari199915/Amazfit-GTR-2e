@@ -197,10 +197,10 @@ public class GTR2eManager {
         }
         Log.d(TAG, "Starting scan for GTR 2e devices");
 
-        connect(null);
+        connect();
     }
 
-    public void connect(BluetoothDevice device) {
+    public void connect() {
         if (!bound) {
             Log.w(TAG, "Not bound to service, attempting to bind before connect.");
             startAndBindService();
@@ -212,7 +212,7 @@ public class GTR2eManager {
              if (connectionListener != null) connectionListener.onError("Service not ready to connect");
              return;
         }
-        bleService.connect(device);
+        bleService.connect();
     }
 
     public void disconnect() {

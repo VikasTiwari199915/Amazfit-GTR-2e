@@ -20,6 +20,8 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
+import android.companion.CompanionDeviceManager;
+import android.companion.ObservingDevicePresenceRequest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -36,6 +38,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.core.content.ContextCompat;
 
 import com.vikas.gtr2e.beans.DeviceInfo;
@@ -117,6 +120,7 @@ public class GTR2eBleService extends Service {
     private BluetoothGattCharacteristic characteristicChunked2021Read;
     Huami2021Handler huami2021Handler = (type, payload) -> handleChunkedRead(payload);
     private int mMTU = MIN_MTU;
+
     private boolean isBleBusy = false;
 
 
@@ -167,6 +171,10 @@ public class GTR2eBleService extends Service {
                 deviceInfo.updateBatteryInfo(null);
                 if (connectionCallback != null) {
                     connectionCallback.onError("Connection failed: " + status);
+                }
+                synchronized (bleOperations) {
+                    bleOperations.clear();
+                    isBleBusy = false;
                 }
                 disconnect();
                 updateConnectionState();
@@ -304,6 +312,9 @@ public class GTR2eBleService extends Service {
         NotificationUtility.startAsForegroundService(GTR2eBleService.this, deviceInfo.isConnected());
         deviceInfo.setDeviceName("Amazfit GTR 2e");
 //        registerCallReceiver();
+        if (Prefs.getDeviceAdded(context)) {
+            registerDevicePresence();
+        }
     }
 
     private void initializeBluetooth() {
@@ -328,7 +339,12 @@ public class GTR2eBleService extends Service {
     }
 
     @SuppressLint("MissingPermission")
-    public void connect(BluetoothDevice device) {
+    public void connect() {
+        if(deviceInfo.isConnected() || deviceInfo.isForceDisconnected()){
+            //No need to reconnect
+            Log.e(TAG, "device already connected, skipping...");
+            return;
+        }
         if (gatt != null) {
             Log.w(TAG, "Existing GATT found, closing...");
             gatt.disconnect();
@@ -341,12 +357,10 @@ public class GTR2eBleService extends Service {
             }
         }
 
-        BluetoothDevice targetDevice = device;
-        if (targetDevice == null) {
-            String lastMac = Prefs.getLastDeviceMac(context);
-            if (lastMac != null && bluetoothAdapter != null) {
-                targetDevice = bluetoothAdapter.getRemoteDevice(lastMac);
-            }
+        BluetoothDevice targetDevice = null;
+        String lastMac = Prefs.getLastDeviceMac(context);
+        if (lastMac != null && bluetoothAdapter != null) {
+            targetDevice = bluetoothAdapter.getRemoteDevice(lastMac);
         }
 
         if (targetDevice == null) {
@@ -1004,6 +1018,22 @@ public class GTR2eBleService extends Service {
 //            Log.w(TAG, "Call receiver already registered or error: " + e.getMessage());
 //        }
 //    }
+
+    private void registerDevicePresence() {
+        CompanionDeviceManager cdm = (CompanionDeviceManager) getSystemService(Context.COMPANION_DEVICE_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+            ObservingDevicePresenceRequest request = new ObservingDevicePresenceRequest.Builder()
+                    .setAssociationId(Prefs.getLastDeviceAssociationId(context))
+                    .build();
+            cdm.startObservingDevicePresence(request);
+        } else {
+            String mac = Prefs.getLastDeviceMac(context);
+            if (mac != null) {
+                cdm.startObservingDevicePresence(mac);
+                Log.d(TAG, "Started observing device presence for: " + mac);
+            }
+        }
+    }
 
     //mute call
     public void muteCall() {

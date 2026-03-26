@@ -15,4 +15,5 @@
     <string name="disconnected">Disconnected</string>
     <string name="no_device_connected">No device connected</string>
     <string name="searching_for_devices">Searching for devices...</string>
+    <string name="bluetooth_not_supported">Bluetooth not supported</string>
 </resources>

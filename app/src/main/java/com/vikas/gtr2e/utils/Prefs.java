@@ -9,6 +9,7 @@ public class Prefs {
     public static final String PREF_LAST_DEVICE_MAC = "lastDeviceMac";
     public static final String PREF_AUTH_KEY = "authKey";
     public static final String PREF_DEVICE_ADDED = "deviceAdded";
+    public static final String PREF_LAST_DEVICE_ASSOCIATION = "PREF_LAST_DEVICE_ASSOCIATION";
 
 
     public static boolean getDeviceAdded(Context context) {
@@ -44,5 +45,13 @@ public class Prefs {
 
     public static void setAuthKey(Context context, String authKey) {
         getPrefs(context).edit().putString(PREF_AUTH_KEY, authKey).apply();
+    }
+
+    public static int getLastDeviceAssociationId(Context context) {
+        return getPrefs(context).getInt(PREF_LAST_DEVICE_ASSOCIATION, -1);
+    }
+
+    public static void setLastDeviceAssociationId(Context context, int id) {
+        getPrefs(context).edit().putInt(PREF_LAST_DEVICE_ASSOCIATION, id).apply();
     }
 }
