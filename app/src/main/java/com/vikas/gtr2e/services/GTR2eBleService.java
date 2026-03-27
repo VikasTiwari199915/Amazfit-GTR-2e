@@ -24,7 +24,6 @@ import android.companion.CompanionDeviceManager;
 import android.companion.ObservingDevicePresenceRequest;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.media.MediaMetadata;
 import android.media.session.MediaController;
 import android.media.session.PlaybackState;
@@ -33,13 +32,10 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-import androidx.core.content.ContextCompat;
 
 import com.vikas.gtr2e.beans.DeviceInfo;
 import com.vikas.gtr2e.beans.MusicBean;
@@ -48,19 +44,16 @@ import com.vikas.gtr2e.ble.BleNamesResolver;
 import com.vikas.gtr2e.ble.Huami2021ChunkedDecoder;
 import com.vikas.gtr2e.ble.Huami2021ChunkedEncoder;
 import com.vikas.gtr2e.ble.Huami2021Handler;
-import com.vikas.gtr2e.ble.HuamiBatteryInfo;
 import com.vikas.gtr2e.ble.HuamiService;
 import com.vikas.gtr2e.ble.InfoHandler;
 import com.vikas.gtr2e.enums.MusicControl;
 import com.vikas.gtr2e.interfaces.ConnectionCallback;
 import com.vikas.gtr2e.utils.ConversionUtil;
-import com.vikas.gtr2e.utils.IncomingCallReceiver;
 import com.vikas.gtr2e.utils.MediaUtil;
 import com.vikas.gtr2e.utils.NotificationUtility;
 import com.vikas.gtr2e.utils.Prefs;
 import com.vikas.gtr2e.utils.StringUtils;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -78,7 +71,11 @@ import javax.crypto.spec.SecretKeySpec;
 
 import lombok.Getter;
 import lombok.Setter;
-
+/**
+ * Foreground Service for GTR2e, performs all ble operations
+ * registers event listener services, handles auth and device connection
+ * @author Vikas Tiwari
+ */
 @SuppressLint("MissingPermission")
 public class GTR2eBleService extends Service {
 
@@ -856,6 +853,7 @@ public class GTR2eBleService extends Service {
         //Send the music state after a small delay. If we send it right as the app notifies us that it opened, it won't be recognized.
 //        MediaUtil.refresh(getApplicationContext());
         if(opened) {
+            MediaUtil.refresh(context);
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 sendMusicStateToDevice(MediaUtil.bufferMusicBean, MediaUtil.bufferMusicStateBean);
                 onSetPhoneVolume(MediaUtil.getPhoneVolume(getApplicationContext()));
@@ -1007,17 +1005,6 @@ public class GTR2eBleService extends Service {
         // startService(restartService);
         super.onTaskRemoved(rootIntent);
     }
-
-//    private void registerCallReceiver() {
-//        IntentFilter filter = new IntentFilter();
-//        filter.addAction(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
-//        filter.addAction("com.vikas.gtr2e.MUTE_CALL");
-//        try {
-//            ContextCompat.registerReceiver(context, new IncomingCallReceiver(GTR2eBleService.this), filter, ContextCompat.RECEIVER_EXPORTED);
-//        } catch (Exception e) {
-//            Log.w(TAG, "Call receiver already registered or error: " + e.getMessage());
-//        }
-//    }
 
     private void registerDevicePresence() {
         CompanionDeviceManager cdm = (CompanionDeviceManager) getSystemService(Context.COMPANION_DEVICE_SERVICE);

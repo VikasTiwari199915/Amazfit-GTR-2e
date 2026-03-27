@@ -2,7 +2,13 @@ package com.vikas.gtr2e.utils;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-
+/*
+ * Based on code from Gadgetbridge:
+ * https://codeberg.org/Freeyourgadget/Gadgetbridge
+ * Licensed under AGPLv3
+ *
+ * Modifications by Vikas Tiwari
+ */
 public class ConversionUtil {
     public static byte[] fromUint16(int value) {
         return new byte[] {

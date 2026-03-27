@@ -31,13 +31,17 @@ import android.widget.Toast;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import android.util.Log;
 
 import com.vikas.gtr2e.beans.DeviceInfo;
-import com.vikas.gtr2e.ble.HuamiBatteryInfo;
+import com.vikas.gtr2e.beans.HuamiBatteryInfo;
 import com.vikas.gtr2e.databinding.ActivityMainBinding;
 import com.vikas.gtr2e.utils.AppAutoUpdater;
+import com.vikas.gtr2e.utils.GTR2eManager;
 import com.vikas.gtr2e.utils.MediaUtil;
 import com.vikas.gtr2e.utils.Prefs;
 
@@ -48,6 +52,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * MainActivity shows the UI on the app landing page
+ * @author Vikas Tiwari
+ */
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_CODE = 1;
     private static final int BLUETOOTH_REQUEST_CODE = 2;
@@ -76,6 +84,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        ViewCompat.setOnApplyWindowInsetsListener(binding.getRoot(), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
         deviceAddedJustNow = getIntent().getBooleanExtra("DEVICE_ADDED_JUST_NOW", false);
 
         initViews();
@@ -234,7 +247,7 @@ public class MainActivity extends AppCompatActivity {
                         if (mediaPlayer != null) mediaPlayer.start();
                         binding.blackBg.setImageResource(R.drawable.find_phone);
                         binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
-                        binding.tvStatus.setText("Finding Phone...");
+                        binding.tvStatus.setText(R.string.finding_phone);
                         binding.watchHeartRateIcon.setVisibility(View.INVISIBLE);
                         binding.watchHeartRateText.setVisibility(View.INVISIBLE);
                         binding.batteryPercentLabel.setVisibility(View.INVISIBLE);
@@ -293,20 +306,21 @@ public class MainActivity extends AppCompatActivity {
         }
         if(connected) {
             runOnUiThread(() -> {
-                binding.tvStatus.setText("Connected to GTR 2e");
+                binding.tvStatus.setText(R.string.connected_to_gtr_2e);
                 binding.connectDeviceButton.setIconResource(R.drawable.rounded_bluetooth_disabled_24);
-                binding.connectDeviceButton.setText("Disconnect");
+                binding.connectDeviceButton.setText(R.string.disconnect);
             });
         } else {
             Log.d(TAG, "onDisconnected() called in MainActivity");
             runOnUiThread(() -> {
                 binding.connectDeviceButton.setIconResource(R.drawable.rounded_bluetooth_connected_24);
-                binding.connectDeviceButton.setText("Connect");
+                binding.connectDeviceButton.setText(R.string.connect);
                 updateDeviceInfo();
             });
         }
     }
 
+    //Need to make the permissions request better in UX, with explanations
     private boolean checkPermissions() {
         List<String> permissions = new ArrayList<>();
 
@@ -315,12 +329,10 @@ public class MainActivity extends AppCompatActivity {
                 Manifest.permission.BLUETOOTH_ADMIN,
                 Manifest.permission.BLUETOOTH_CONNECT,
                 Manifest.permission.BLUETOOTH_SCAN,
-//                Manifest.permission.ACCESS_FINE_LOCATION,
-//                Manifest.permission.ACCESS_COARSE_LOCATION,
-//                Manifest.permission.MODIFY_AUDIO_SETTINGS,
                 Manifest.permission.READ_PHONE_STATE,
                 Manifest.permission.READ_CONTACTS,
-                Manifest.permission.READ_CALL_LOG
+                Manifest.permission.READ_CALL_LOG,
+                Manifest.permission.ACCESS_NOTIFICATION_POLICY
         );
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

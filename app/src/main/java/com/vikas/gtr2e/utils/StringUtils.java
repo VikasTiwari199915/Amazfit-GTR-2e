@@ -7,7 +7,13 @@ import java.nio.charset.StandardCharsets;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
+/*
+ * Based on code from Gadgetbridge:
+ * https://codeberg.org/Freeyourgadget/Gadgetbridge
+ * Licensed under AGPLv3
+ *
+ * Modifications by Vikas Tiwari
+ */
 public class StringUtils {
 
     @NonNull

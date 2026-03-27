@@ -6,6 +6,10 @@ import retrofit2.Call;
 import retrofit2.http.GET;
 import java.util.List;
 
+/**
+ * Retrofit interface for GitHub API
+ * @author Vikas Tiwari
+ */
 public interface GitHubApiService {
     @GET("repos/VikasTiwari199915/Amazfit-GTR-2e/releases")
     Call<List<GithubRelease>> getReleases();

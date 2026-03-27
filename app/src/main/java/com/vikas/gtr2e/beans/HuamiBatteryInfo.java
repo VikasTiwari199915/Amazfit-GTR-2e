@@ -1,14 +1,18 @@
-package com.vikas.gtr2e.ble;
+package com.vikas.gtr2e.beans;
 
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 
-import com.vikas.gtr2e.GTR2eManager;
+import com.vikas.gtr2e.utils.GTR2eManager;
 
-/**
+/*
  * Parser for Huami device battery information
  * Based on the reference implementation from Gadgetbridge
+ * Licensed under AGPLv3
+ * Some changes might have been made to better fit the needs of this project.
+ *
+ * Modifications by Vikas Tiwari
  */
 public class HuamiBatteryInfo {
     private static final String TAG = "HuamiBatteryInfoHelper";

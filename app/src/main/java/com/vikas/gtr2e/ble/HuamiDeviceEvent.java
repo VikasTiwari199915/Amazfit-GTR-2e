@@ -1,5 +1,11 @@
 package com.vikas.gtr2e.ble;
-
+/*
+ * Based on code from Gadgetbridge:
+ * https://codeberg.org/Freeyourgadget/Gadgetbridge
+ * Licensed under AGPLv3
+ *
+ * Modifications by Vikas Tiwari
+ */
 public class HuamiDeviceEvent {
     public static final byte FELL_ASLEEP = 0x01;
     public static final byte WOKE_UP = 0x02;

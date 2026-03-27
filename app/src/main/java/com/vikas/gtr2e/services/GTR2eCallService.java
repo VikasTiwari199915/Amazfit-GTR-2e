@@ -4,11 +4,16 @@ import android.telecom.Call;
 import android.telecom.InCallService;
 import android.util.Log;
 
-import com.vikas.gtr2e.GTR2eManager;
+import com.vikas.gtr2e.utils.GTR2eManager;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * InCallService implementation for GTR2e
+ * Used to manage incoming and outgoing calls
+ * @author Vikas Tiwari
+ */
 public class GTR2eCallService extends InCallService {
     private static final String TAG = "GTR2eCallService";
     private static final ConcurrentHashMap<String, Call> activeCalls = new ConcurrentHashMap<>();

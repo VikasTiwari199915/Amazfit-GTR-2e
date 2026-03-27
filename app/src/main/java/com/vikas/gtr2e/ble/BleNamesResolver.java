@@ -24,13 +24,19 @@ import android.bluetooth.BluetoothProfile;
 import android.util.SparseArray;
 
 import java.util.HashMap;
-
+/*
+ * Based on code from Gadgetbridge:
+ * https://codeberg.org/Freeyourgadget/Gadgetbridge
+ * Licensed under AGPLv3
+ *
+ * Modifications by Vikas Tiwari
+ */
 public class BleNamesResolver {
     public static HashMap<String, String> mServices = new HashMap<>(100);
     public static HashMap<String, String> mCharacteristics = new HashMap<>(600);
-    private static SparseArray<String> mValueFormats = new SparseArray<>(10);
-    private static SparseArray<String> mAppearance = new SparseArray<>(20);
-    private static SparseArray<String> mHeartRateSensorLocation = new SparseArray<>(10);
+    private static final SparseArray<String> mValueFormats = new SparseArray<>(10);
+    private static final SparseArray<String> mAppearance = new SparseArray<>(20);
+    private static final SparseArray<String> mHeartRateSensorLocation = new SparseArray<>(10);
 
     static public String resolveServiceName(final String uuid) {
         String result = mServices.get(uuid);

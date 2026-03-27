@@ -18,6 +18,10 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+/**
+ * Utility class for checking for updates
+ * @author Vikas Tiwari
+ */
 public class AppAutoUpdater {
 
     private static final String TAG = "AppAutoUpdater";
@@ -27,7 +31,7 @@ public class AppAutoUpdater {
     }
 
     public static void checkForUpdates(Context context, AppUpdateListener listener) {
-        GitHubApiService apiService = RetrofitClient.getApiService();
+        GitHubApiService apiService = RetrofitClient.getGithubApiService();
         apiService.getReleases().enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<List<GithubRelease>> call, @NonNull Response<List<GithubRelease>> response) {

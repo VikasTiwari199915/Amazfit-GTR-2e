@@ -7,8 +7,13 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
-import com.vikas.gtr2e.GTR2eManager;
+import com.vikas.gtr2e.utils.GTR2eManager;
 
+/**
+ * CompanionDeviceService implementation for GTR2e
+ * Notifies when device is in range or out of range
+ * @author Vikas Tiwari
+ */
 public class GTR2eCompanionService extends CompanionDeviceService {
 
     public static final String TAG = "GTR2eCompanionService";
@@ -33,13 +38,12 @@ public class GTR2eCompanionService extends CompanionDeviceService {
                 case DevicePresenceEvent.EVENT_BLE_APPEARED:
                 case DevicePresenceEvent.EVENT_BT_CONNECTED:
                     Log.e(TAG, "onDevicePresenceEvent:: DEVICE_APPEARED");
-//                    handleDeviceAppeared(event.getAssociationId());
+                    reconnectWatch();
                     break;
 
                 case DevicePresenceEvent.EVENT_BLE_DISAPPEARED:
                 case DevicePresenceEvent.EVENT_BT_DISCONNECTED:
                     Log.e(TAG, "onDevicePresenceEvent:: DEVICE_DISAPPEARED");
-//                    handleDeviceDisappeared(event.getAssociationId());
                     break;
             }
 
@@ -55,10 +59,6 @@ public class GTR2eCompanionService extends CompanionDeviceService {
 
     private GTR2eManager getGtr2eManager() {
         return GTR2eManager.getInstance(getApplicationContext());
-    }
-
-    private GTR2eBleService getBleService() {
-        return getGtr2eManager().getBleService();
     }
 
 

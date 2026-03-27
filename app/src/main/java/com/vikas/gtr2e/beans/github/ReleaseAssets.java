@@ -3,7 +3,13 @@ import java.util.Date;
 
 import com.google.gson.annotations.SerializedName;
 
-   
+import lombok.Data;
+
+/**
+ * Retrofit model for GitHub API
+ * @author Vikas Tiwari
+ */
+@Data
 public class ReleaseAssets {
 
    @SerializedName("url")
@@ -47,104 +53,5 @@ public class ReleaseAssets {
 
    @SerializedName("browser_download_url")
    String browserDownloadUrl;
-
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-    public String getUrl() {
-        return url;
-    }
-    
-    public void setId(int id) {
-        this.id = id;
-    }
-    public int getId() {
-        return id;
-    }
-    
-    public void setNodeId(String nodeId) {
-        this.nodeId = nodeId;
-    }
-    public String getNodeId() {
-        return nodeId;
-    }
-    
-    public void setName(String name) {
-        this.name = name;
-    }
-    public String getName() {
-        return name;
-    }
-    
-    public void setLabel(String label) {
-        this.label = label;
-    }
-    public String getLabel() {
-        return label;
-    }
-    
-    public void setUploader(Uploader uploader) {
-        this.uploader = uploader;
-    }
-    public Uploader getUploader() {
-        return uploader;
-    }
-    
-    public void setContentType(String contentType) {
-        this.contentType = contentType;
-    }
-    public String getContentType() {
-        return contentType;
-    }
-    
-    public void setState(String state) {
-        this.state = state;
-    }
-    public String getState() {
-        return state;
-    }
-    
-    public void setSize(int size) {
-        this.size = size;
-    }
-    public int getSize() {
-        return size;
-    }
-    
-    public void setDigest(String digest) {
-        this.digest = digest;
-    }
-    public String getDigest() {
-        return digest;
-    }
-    
-    public void setDownloadCount(int downloadCount) {
-        this.downloadCount = downloadCount;
-    }
-    public int getDownloadCount() {
-        return downloadCount;
-    }
-    
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-    
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-    public Date getUpdatedAt() {
-        return updatedAt;
-    }
-    
-    public void setBrowserDownloadUrl(String browserDownloadUrl) {
-        this.browserDownloadUrl = browserDownloadUrl;
-    }
-    public String getBrowserDownloadUrl() {
-        return browserDownloadUrl;
-    }
     
 }

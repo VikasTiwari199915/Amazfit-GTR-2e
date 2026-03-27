@@ -17,6 +17,10 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 
+/**
+ * Retrofit model for Zepp API
+ * @author Vikas Tiwari
+ */
 @Data
 @NoArgsConstructor
 public class AdditionalInfo {

@@ -16,4 +16,11 @@
     <string name="no_device_connected">No device connected</string>
     <string name="searching_for_devices">Searching for devices...</string>
     <string name="bluetooth_not_supported">Bluetooth not supported</string>
+    <string name="search_failed_or_cancelled">Search failed or cancelled</string>
+    <string name="device_selected">Device selected</string>
+    <string name="discovery_cancelled">Discovery cancelled</string>
+    <string name="connect">Connect</string>
+    <string name="connected_to_gtr_2e">Connected to GTR 2e</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="finding_phone">Finding Phone...</string>
 </resources>

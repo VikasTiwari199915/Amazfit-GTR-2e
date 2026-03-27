@@ -3,30 +3,34 @@ package com.vikas.gtr2e.interfaces;
 import android.bluetooth.BluetoothDevice;
 
 import com.vikas.gtr2e.beans.DeviceInfo;
-import com.vikas.gtr2e.ble.HuamiBatteryInfo;
+import com.vikas.gtr2e.beans.HuamiBatteryInfo;
 
+/**
+ * Interface for BLE connection callbacks
+ * @author Vikas Tiwari
+ */
 public interface ConnectionCallback {
-        void onDeviceConnected(BluetoothDevice device);
+    void onDeviceConnected(BluetoothDevice device);
 
-        void onDeviceDisconnected();
+    void onDeviceDisconnected();
 
-        void onAuthenticated();
+    void onAuthenticated();
 
-        void onError(String error);
+    void onError(String error);
 
-        void onBatteryDataReceived(HuamiBatteryInfo batteryInfo);
+    void onBatteryDataReceived(HuamiBatteryInfo batteryInfo);
 
-        void onHeartRateChanged(int heartRate);
+    void onHeartRateChanged(int heartRate);
 
-        void onHeartRateMonitoringChanged(boolean enabled);
+    void onHeartRateMonitoringChanged(boolean enabled);
 
-        void findPhoneStateChanged(boolean started);
+    void findPhoneStateChanged(boolean started);
 
-        void pendingBleProcessChanged(int count);
+    void pendingBleProcessChanged(int count);
 
-        void onDeviceInfoChanged(DeviceInfo deviceInfo);
+    void onDeviceInfoChanged(DeviceInfo deviceInfo);
 
-        void onCallRejected();
+    void onCallRejected();
 
-        void setMtu(int mtu);
+    void setMtu(int mtu);
 }

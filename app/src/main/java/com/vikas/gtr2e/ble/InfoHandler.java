@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.util.Log;
 
 import com.vikas.gtr2e.beans.DeviceInfo;
+import com.vikas.gtr2e.beans.HuamiBatteryInfo;
 import com.vikas.gtr2e.enums.MusicControl;
 import com.vikas.gtr2e.interfaces.ConnectionCallback;
 import com.vikas.gtr2e.services.GTR2eBleService;
@@ -12,7 +13,13 @@ import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.UUID;
-
+/*
+ * Based on code from Gadgetbridge:
+ * https://codeberg.org/Freeyourgadget/Gadgetbridge
+ * Licensed under AGPLv3
+ *
+ * Modifications by Vikas Tiwari
+ */
 public class InfoHandler {
     public static final String TAG = "InfoHandler";
 

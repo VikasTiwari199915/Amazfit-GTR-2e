@@ -15,6 +15,17 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
+import lombok.Getter;
+import lombok.Setter;
+/*
+ * Based on code from Gadgetbridge:
+ * https://codeberg.org/Freeyourgadget/Gadgetbridge
+ * Licensed under AGPLv3
+ *
+ * Modifications by Vikas Tiwari
+ */
+@Getter
+@Setter
 public class Huami2021ChunkedDecoder {
 
     private Byte currentHandle;
@@ -32,26 +43,13 @@ public class Huami2021ChunkedDecoder {
     private Huami2021Handler huami2021Handler;
     private final boolean force2021Protocol;
 
-    public Huami2021ChunkedDecoder(final Huami2021Handler huami2021Handler,
-                                   final boolean force2021Protocol) {
+    public Huami2021ChunkedDecoder(final Huami2021Handler huami2021Handler, final boolean force2021Protocol) {
         this.huami2021Handler = huami2021Handler;
         this.force2021Protocol = force2021Protocol;
     }
 
     public void setEncryptionParameters(final byte[] sharedSessionKey) {
         this.sharedSessionKey = sharedSessionKey;
-    }
-
-    public void setHuami2021Handler(final Huami2021Handler huami2021Handler) {
-        this.huami2021Handler = huami2021Handler;
-    }
-
-    public byte getLastHandle() {
-        return lastHandle;
-    }
-
-    public byte getLastCount() {
-        return lastCount;
     }
 
     public boolean decode(final byte[] data) {

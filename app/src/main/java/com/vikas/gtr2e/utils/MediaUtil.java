@@ -17,7 +17,7 @@ import androidx.annotation.Nullable;
 import com.vikas.gtr2e.beans.MusicBean;
 import com.vikas.gtr2e.beans.MusicStateBean;
 import com.vikas.gtr2e.enums.MusicControl;
-import com.vikas.gtr2e.services.NotificationListener;
+import com.vikas.gtr2e.services.GTR2eNotificationListenerService;
 
 import java.util.List;
 
@@ -39,47 +39,57 @@ public class MediaUtil {
 
     public static void refresh(Context context) {
         Log.i(TAG,"Refreshing media state");
+        MediaController controller = getMediaController(context);
+        if(controller==null) {
+            bufferMusicBean = null;
+            bufferMusicStateBean = null;
+            return;
+        }
         try {
-            MediaController controller = getMediaController(context);
-            if(controller==null) {
-                bufferMusicBean = null;
-                bufferMusicStateBean = null;
-                return;
-            }
             bufferMusicBean = extractMusicBean(controller.getMetadata());
             bufferMusicStateBean = extractMusicStateBean(controller.getPlaybackState());
-        } catch (final SecurityException e) {
-            Log.w(TAG,"No permission to get media sessions - did not grant notification access?", e);
         } catch (final Exception e) {
             Log.e(TAG,"Failed to get media info", e);
         }
     }
 
     public static void setMediaState(Context context, MusicControl control) {
-        MediaController controller = getMediaController(context);
-        if (controller == null) return;
+        try {
+            MediaController controller = getMediaController(context);
+            if (controller == null) return;
 
-        MediaController.TransportControls tc = controller.getTransportControls();
+            MediaController.TransportControls tc = controller.getTransportControls();
 
-        switch (control) {
-            case PLAY -> tc.play();
-            case PAUSE -> tc.pause();
-            case NEXT -> tc.skipToNext();
-            case PREVIOUS -> tc.skipToPrevious();
-            case VOLUME_UP -> controller.adjustVolume(AudioManager.ADJUST_RAISE, 0);
-            case VOLUME_DOWN -> controller.adjustVolume(AudioManager.ADJUST_LOWER, 0);
+            switch (control) {
+                case PLAY -> tc.play();
+                case PAUSE -> tc.pause();
+                case NEXT -> tc.skipToNext();
+                case PREVIOUS -> tc.skipToPrevious();
+                case VOLUME_UP -> controller.adjustVolume(AudioManager.ADJUST_RAISE, 0);
+                case VOLUME_DOWN -> controller.adjustVolume(AudioManager.ADJUST_LOWER, 0);
+            }
+        } catch (SecurityException e) {
+            Log.w(TAG, "No permission to control media", e);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to set media state", e);
         }
     }
 
     public static MediaController getMediaController(Context context) {
-        MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
-        List<MediaController> controllers = msm.getActiveSessions(new ComponentName(context, NotificationListener.class));
+        try {
+            MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
+            List<MediaController> controllers = msm.getActiveSessions(new ComponentName(context, GTR2eNotificationListenerService.class));
 
-        if (!controllers.isEmpty()) return controllers.get(0);
+            if (!controllers.isEmpty()) return controllers.get(0);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            MediaSession.Token token = msm.getMediaKeyEventSession();
-            return token != null ? new MediaController(context, token) : null;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                MediaSession.Token token = msm.getMediaKeyEventSession();
+                return token != null ? new MediaController(context, token) : null;
+            }
+        } catch (SecurityException e) {
+            Log.w(TAG, "No permission to get media sessions - did not grant notification access?", e);
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting media controller", e);
         }
         return null;
     }

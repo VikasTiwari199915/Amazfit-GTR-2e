@@ -1,9 +1,11 @@
 package com.vikas.gtr2e.beans;
 
-import com.vikas.gtr2e.ble.HuamiBatteryInfo;
-
 import lombok.Data;
 
+/**
+ * Stores data for the ble device
+ * @author Vikas Tiwari
+ */
 @Data
 public class DeviceInfo {
     String deviceName;

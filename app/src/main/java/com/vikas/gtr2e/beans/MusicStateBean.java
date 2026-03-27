@@ -2,7 +2,14 @@ package com.vikas.gtr2e.beans;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
+/*
+ * Parser for Huami device music state information
+ * Based on the reference implementation from Gadgetbridge
+ * Licensed under AGPLv3
+ * Some changes might have been made to better fit the needs of this project.
+ *
+ * Modifications by Vikas Tiwari
+ */
 @Data
 @NoArgsConstructor
 public class MusicStateBean {

@@ -15,9 +15,11 @@ import androidx.core.app.NotificationManagerCompat;
 
 import com.vikas.gtr2e.R;
 
+/**
+ * Utility class for notifications
+ * @author Vikas Tiwari
+ */
 public class NotificationUtility {
-
-
     private static final int NOTIFICATION_ID = 101;
     private static final String CHANNEL_ID = "gtr2e_ble_service_channel";
 

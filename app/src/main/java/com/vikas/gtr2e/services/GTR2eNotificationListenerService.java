@@ -4,9 +4,14 @@ import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
-import com.vikas.gtr2e.GTR2eManager;
+import com.vikas.gtr2e.utils.GTR2eManager;
 
-public class NotificationListener extends NotificationListenerService {
+/**
+ * NotificationListenerService implementation for GTR2e
+ * Notifies when notification is posted or removed
+ * @author Vikas Tiwari
+ */
+public class GTR2eNotificationListenerService extends NotificationListenerService {
     private static final String TAG = "NotificationListener";
 
     @Override

@@ -3,6 +3,10 @@ package com.vikas.gtr2e.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+/**
+ * Utility class for shared preferences
+ * @author Vikas Tiwari
+ */
 public class Prefs {
     public static final String PREF_NAME = "prefs";
     public static final String PREF_KEEP_SERVICE_RUNNING_IN_BG = "keepServiceRunningInBG";

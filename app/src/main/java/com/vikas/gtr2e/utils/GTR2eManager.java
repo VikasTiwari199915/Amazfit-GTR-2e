@@ -1,4 +1,4 @@
-package com.vikas.gtr2e;
+package com.vikas.gtr2e.utils;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
@@ -9,14 +9,17 @@ import android.os.IBinder;
 import android.util.Log;
 
 import com.vikas.gtr2e.beans.DeviceInfo;
-import com.vikas.gtr2e.ble.HuamiBatteryInfo;
+import com.vikas.gtr2e.beans.HuamiBatteryInfo;
 import com.vikas.gtr2e.interfaces.ConnectionCallback;
 import com.vikas.gtr2e.services.GTR2eBleService;
 import com.vikas.gtr2e.services.GTR2eCallService;
-import com.vikas.gtr2e.utils.Prefs;
 
 import lombok.Getter;
 
+/**
+ * Singleton class for GTR 2e Manager
+ * @author Vikas Tiwari
+ */
 public class GTR2eManager {
     private static final String TAG = "GTR2eManager";
 

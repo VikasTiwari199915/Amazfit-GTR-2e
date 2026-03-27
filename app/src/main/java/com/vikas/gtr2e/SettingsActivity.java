@@ -3,7 +3,6 @@ package com.vikas.gtr2e;
 import android.content.Intent;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -12,14 +11,15 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.materialswitch.MaterialSwitch;
 import com.vikas.gtr2e.databinding.ActivitySettingsBinding;
 import com.vikas.gtr2e.utils.MediaUtil;
 
 public class SettingsActivity extends AppCompatActivity {
 
-    private Switch switchNotifications;
-    private Switch switchHeartRate;
-    private Switch switchAutoSync;
+    private MaterialSwitch switchNotifications;
+    private MaterialSwitch switchHeartRate;
+    private MaterialSwitch switchAutoSync;
     private TextView tvDeviceInfo;
 
     ActivitySettingsBinding binding;

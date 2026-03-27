@@ -10,8 +10,12 @@ package com.vikas.gtr2e.beans.zeppAuthBeans;
 
 import lombok.Data;
 
+/**
+ * Retrofit model for Zepp API
+ * @author Vikas Tiwari
+ */
 @Data
-public class ThirdpartyInfo {
+public class ThirdPartyInfo {
     private String nickname;
     private String icon;
     private String third_id;

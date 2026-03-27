@@ -23,6 +23,7 @@ import com.google.android.material.textfield.TextInputLayout;
 import com.vikas.gtr2e.beans.zeppAuthBeans.ZeppDeviceItem;
 import com.vikas.gtr2e.beans.zeppAuthBeans.ZeppDevicesResponse;
 import com.vikas.gtr2e.beans.zeppAuthBeans.ZeppLoginResponse;
+import com.vikas.gtr2e.listAdapters.ZeppDeviceAdapter;
 import com.vikas.gtr2e.utils.AmazfitAuthUtil;
 import com.vikas.gtr2e.utils.Prefs;
 
@@ -159,11 +160,7 @@ public class ZeppLoginActivity extends AppCompatActivity {
         });
         devicesRecyclerView.setAdapter(adapter);
 
-        if (devicesResponse.getItems().size() == 1) {
-            continueButton.setEnabled(true);
-        } else {
-            continueButton.setEnabled(false);
-        }
+        continueButton.setEnabled(devicesResponse.getItems().size() == 1);
     }
 
     private void handleContinue() {

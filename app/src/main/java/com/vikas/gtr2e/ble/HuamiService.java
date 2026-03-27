@@ -23,9 +23,14 @@ package com.vikas.gtr2e.ble;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
+/*
+ * Based on code from Gadgetbridge:
+ * https://codeberg.org/Freeyourgadget/Gadgetbridge
+ * Licensed under AGPLv3
+ *
+ * Modifications by Vikas Tiwari
+ */
 public class HuamiService {
-
 
     public static final String BASE_UUID = "0000%s-0000-1000-8000-00805f9b34fb";
 

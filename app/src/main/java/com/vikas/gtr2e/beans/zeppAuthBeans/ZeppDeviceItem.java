@@ -10,6 +10,10 @@ package com.vikas.gtr2e.beans.zeppAuthBeans;
 
 import lombok.Data;
 
+/**
+ * Retrofit model for Zepp API
+ * @author Vikas Tiwari
+ */
 @Data
 public class ZeppDeviceItem {
     private long deviceType;

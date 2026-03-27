@@ -16,7 +16,7 @@ import java.util.List;
 public class ZeppLoginResponse {
     private TokenInfo token_info;
     private RegistInfo regist_info;
-    private ThirdpartyInfo thirdparty_info;
+    private ThirdPartyInfo thirdparty_info;
     private String result;
     private Domain domain;
     private List<Domains> domains;

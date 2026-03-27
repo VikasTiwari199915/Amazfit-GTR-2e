@@ -23,10 +23,18 @@ import java.util.*;
 
 import tools.jackson.databind.ObjectMapper;
 
+/*
+ * Based on auth logic from HuaFetcher project
+ * recreated in java by Vikas Tiwari
+ */
+
+/**
+ * Utility class for Zepp Authentication
+ * @author Vikas Tiwari
+ */
 public class AmazfitAuthUtil {
 
     public static final String TAG = "AMAZFIT_AUTH_UTIL";
-    public static final String UTF8 = "UTF-8";
     public static final String ENC_KEY = "xeNtBVqzDc6tuNTh";
     public static final String ENC_IV  = "MAAAYAAAAAAAAABg";
     public static final String TOKEN_URL = "https://api-user-us2.zepp.com/v2/registrations/tokens";
@@ -49,26 +57,25 @@ public class AmazfitAuthUtil {
         }
 
         int status = conn.getResponseCode();
-        System.out.println("Status: " + status);
+        Log.e(TAG,"Status: " + status);
 
         String response = getResponse(conn, status);
-        System.out.println("Response Body: " + response);
+        Log.e(TAG,"Response Body: " + response);
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readValue(response, ZeppLoginResponse.class);
     }
 
     public static ZeppDevicesResponse getDevices(String userId, String appToken) throws Exception {
-//        String baseUrl = "https://api-mifit.zepp.com/users/" + userId + "/devices";
         String baseUrl = MessageFormat.format(AmazfitAuthUtil.DEVICE_URL, userId);
 
         String r1 = UUID.randomUUID().toString();
         String r2 = UUID.randomUUID().toString();
 
-        String query = "r=" + URLEncoder.encode(r1, UTF8) +
-                "&r=" + URLEncoder.encode(r2, UTF8) +
+        String query = "r=" + URLEncoder.encode(r1, StandardCharsets.UTF_8.displayName()) +
+                "&r=" + URLEncoder.encode(r2, StandardCharsets.UTF_8.displayName()) +
                 "&enableMultiDeviceOnMultiType=true" +
                 "&enableMultiDeviceOnMultiType=true" +
-                "&userid=" + URLEncoder.encode(userId, UTF8) +
+                "&userid=" + URLEncoder.encode(userId, StandardCharsets.UTF_8.displayName()) +
                 "&appid=" + new Random().nextLong() +
                 "&channel=a100900101016" +
                 "&country=US" +
@@ -83,9 +90,9 @@ public class AmazfitAuthUtil {
         HttpURLConnection conn = getZeppDevicesHttpURLConnection(appToken, baseUrl, query);
 
         int status = conn.getResponseCode();
-        System.out.println("Device Status: " + status);
+        Log.e(TAG,"Device Status: " + status);
         String response = getResponse(conn, status);
-        System.out.println("Devices Response: " + response);
+        Log.e(TAG,"Devices Response: " + response);
 
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -156,16 +163,16 @@ public class AmazfitAuthUtil {
         os.close();
 
         int status = conn.getResponseCode();
-        System.out.println("Status: " + status);
-        System.out.println("Status: " + conn.getResponseMessage());
+        Log.e(TAG,"Status: " + status);
+        Log.e(TAG,"Status: " + conn.getResponseMessage());
 
         String location = conn.getHeaderField("Location");
-        System.out.println("Redirect Location: " + location);
+        Log.e(TAG,"Redirect Location: " + location);
 
         if(status==303 && location!=null) {
             HashMap<String, String> params = getQueryParams(location);
-            System.out.println("Access: " + params.get("access"));
-            System.out.println("Refresh: " + params.get("refresh"));
+            Log.e(TAG,"Access: " + params.get("access"));
+            Log.e(TAG,"Refresh: " + params.get("refresh"));
             return params;
         } else {
             throw new Exception("Error: "+status+"-"+conn.getResponseMessage());
@@ -216,8 +223,8 @@ public class AmazfitAuthUtil {
 
         for (String param : query.split("&")) {
             String[] pair = param.split("=", 2);
-            String key = URLDecoder.decode(pair[0], UTF8);
-            String value = pair.length > 1 ? URLDecoder.decode(pair[1], UTF8) : "";
+            String key = URLDecoder.decode(pair[0], StandardCharsets.UTF_8.displayName());
+            String value = pair.length > 1 ? URLDecoder.decode(pair[1], StandardCharsets.UTF_8.displayName()) : "";
             params.put(key, value);
         }
         return params;
@@ -259,6 +266,7 @@ public class AmazfitAuthUtil {
         return getUrlEncodedPayload(payload);
     }
 
+    @SuppressWarnings("unchecked")
     private static String getUrlEncodedPayload(Map<String, Object> payload) throws UnsupportedEncodingException {
         StringBuilder result = new StringBuilder();
 
@@ -266,19 +274,17 @@ public class AmazfitAuthUtil {
             if (entry.getValue() instanceof List) {
                 for (String val : (List<String>) entry.getValue()) {
                     if (result.length() > 0) result.append("&");
-                    result.append(URLEncoder.encode(entry.getKey(), UTF8));
+                    result.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8.displayName()));
                     result.append("=");
-                    result.append(URLEncoder.encode(val, UTF8));
+                    result.append(URLEncoder.encode(val, StandardCharsets.UTF_8.displayName()));
                 }
             } else {
                 if (result.length() > 0) result.append("&");
-                result.append(URLEncoder.encode(entry.getKey(), UTF8));
+                result.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8.displayName()));
                 result.append("=");
-                result.append(URLEncoder.encode(entry.getValue().toString(), UTF8));
+                result.append(URLEncoder.encode(entry.getValue().toString(), StandardCharsets.UTF_8.displayName()));
             }
         }
-
-        System.out.println(result);
         return result.toString();
     }
 }

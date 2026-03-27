@@ -1,9 +1,8 @@
-package com.vikas.gtr2e;
+package com.vikas.gtr2e.listAdapters;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,11 +10,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.vikas.gtr2e.R;
 import com.vikas.gtr2e.beans.zeppAuthBeans.ZeppDeviceItem;
 
 import java.text.SimpleDateFormat;
@@ -23,6 +22,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Adapter for displaying a list of Zepp devices in a RecyclerView.
+ * @author Vikas Tiwari
+ */
 public class ZeppDeviceAdapter extends RecyclerView.Adapter<ZeppDeviceAdapter.ViewHolder> {
     public interface OnDeviceSelectedListener {
         void onDeviceSelected(ZeppDeviceItem device);
@@ -112,7 +115,7 @@ public class ZeppDeviceAdapter extends RecyclerView.Adapter<ZeppDeviceAdapter.Vi
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            cardView = (MaterialCardView) itemView.findViewById(R.id.cardView);
+            cardView = itemView.findViewById(R.id.cardView);
             deviceName = itemView.findViewById(R.id.deviceName);
             macValue = itemView.findViewById(R.id.macValue);
             activeValue = itemView.findViewById(R.id.activeValue);

@@ -12,6 +12,10 @@ import lombok.Data;
 
 import java.util.List;
 
+/**
+ * Retrofit model for Zepp API
+ * @author Vikas Tiwari
+ */
 @Data
 public class ZeppDevicesResponse {
     private List<ZeppDeviceItem> items;

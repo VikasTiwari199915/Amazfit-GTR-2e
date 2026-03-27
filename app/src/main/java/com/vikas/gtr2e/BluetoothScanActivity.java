@@ -33,6 +33,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.button.MaterialButton;
+import com.vikas.gtr2e.databinding.ActivityBluetoothScanBinding;
+import com.vikas.gtr2e.databinding.ActivityMainBinding;
 import com.vikas.gtr2e.utils.Prefs;
 
 public class BluetoothScanActivity extends AppCompatActivity {
@@ -42,40 +44,35 @@ public class BluetoothScanActivity extends AppCompatActivity {
     private static final int BLUETOOTH_REQUEST_CODE = 2345;
     private static final int SELECT_DEVICE_REQUEST_CODE = 42;
 
-    private TextView scanStatus;
-    private ProgressBar scanProgress;
-    private MaterialButton rescanButton;
-
     private BluetoothAdapter bluetoothAdapter;
+
+    ActivityBluetoothScanBinding binding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        binding = ActivityBluetoothScanBinding.inflate(getLayoutInflater());
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_bluetooth_scan);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+        setContentView(binding.getRoot());
+        ViewCompat.setOnApplyWindowInsetsListener(binding.getRoot(), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        scanStatus = findViewById(R.id.scanStatus);
-        scanProgress = findViewById(R.id.scanProgress);
-        rescanButton = findViewById(R.id.rescanButton);
-
         BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         if (bluetoothManager != null) {
             bluetoothAdapter = bluetoothManager.getAdapter();
         }
-        rescanButton.setOnClickListener(v -> startCompanionDeviceAssociation());
+        binding.rescanButton.setOnClickListener(v -> startCompanionDeviceAssociation());
         startScanWithPermissionCheck();
     }
 
     private void startScanWithPermissionCheck() {
         if (bluetoothAdapter == null) {
             Toast.makeText(this, "Bluetooth not supported on this device", Toast.LENGTH_SHORT).show();
-            scanStatus.setText(R.string.bluetooth_not_supported);
-            scanProgress.setVisibility(View.GONE);
+            binding.scanStatus.setText(R.string.bluetooth_not_supported);
+            binding.scanProgress.setVisibility(View.GONE);
             return;
         }
 
@@ -100,28 +97,21 @@ public class BluetoothScanActivity extends AppCompatActivity {
 
         CompanionDeviceManager deviceManager = (CompanionDeviceManager) getSystemService(Context.COMPANION_DEVICE_SERVICE);
 
-        // Filter for GTR 2e devices using its auth service UUID
+        // Filter for GTR 2e devices using its mac-address, as we only handle one device in our app anyway
         BluetoothLeDeviceFilter deviceFilter = new BluetoothLeDeviceFilter.Builder()
                 .setScanFilter(new ScanFilter.Builder()
                         .setDeviceAddress(Prefs.getLastDeviceMac(getApplicationContext()))
                         .build())
                 .build();
-//        BluetoothLeDeviceFilter deviceFilter = new BluetoothLeDeviceFilter.Builder()
-//                        .setNamePattern(Pattern.compile("Amazfit GTR 2e"))
-//                        .build();
-//        BluetoothLeDeviceFilter deviceFilter = new BluetoothLeDeviceFilter.Builder()
-//                        .setScanFilter(new ScanFilter.Builder().setDeviceName("Amazfit GTR 2e").build())
-//                        .build();
-
         AssociationRequest pairingRequest = new AssociationRequest.Builder()
                 .addDeviceFilter(deviceFilter)
                 .setSingleDevice(false)
                 .setDeviceProfile(AssociationRequest.DEVICE_PROFILE_WATCH)
                 .build();
 
-        scanStatus.setText(R.string.searching_for_devices);
-        scanProgress.setVisibility(View.VISIBLE);
-        rescanButton.setEnabled(false);
+        binding.scanStatus.setText(R.string.searching_for_devices);
+        binding.scanProgress.setVisibility(View.VISIBLE);
+        binding.rescanButton.setEnabled(false);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             deviceManager.associate(pairingRequest, getMainExecutor(), companionCallback);
@@ -155,9 +145,9 @@ public class BluetoothScanActivity extends AppCompatActivity {
         public void onFailure(CharSequence error) {
             Log.e(TAG, "Association failed: " + error);
             runOnUiThread(() -> {
-                scanStatus.setText("Search failed or cancelled");
-                scanProgress.setVisibility(View.GONE);
-                rescanButton.setEnabled(true);
+                binding.scanStatus.setText(R.string.search_failed_or_cancelled);
+                binding.scanProgress.setVisibility(View.GONE);
+                binding.rescanButton.setEnabled(true);
             });
         }
     };
@@ -195,13 +185,13 @@ public class BluetoothScanActivity extends AppCompatActivity {
             } else if (device instanceof ScanResult) {
                 handleDeviceSelected(((ScanResult) device).getDevice());
             }
-            scanStatus.setText("Device selected");
-            scanProgress.setVisibility(View.GONE);
-            rescanButton.setEnabled(true);
+            binding.scanStatus.setText(R.string.device_selected);
+            binding.scanProgress.setVisibility(View.GONE);
+            binding.rescanButton.setEnabled(true);
         } else if (requestCode == SELECT_DEVICE_REQUEST_CODE) {
-            scanStatus.setText("Discovery cancelled");
-            scanProgress.setVisibility(View.GONE);
-            rescanButton.setEnabled(true);
+            binding.scanStatus.setText(R.string.discovery_cancelled);
+            binding.scanProgress.setVisibility(View.GONE);
+            binding.rescanButton.setEnabled(true);
         }
     }
 }
