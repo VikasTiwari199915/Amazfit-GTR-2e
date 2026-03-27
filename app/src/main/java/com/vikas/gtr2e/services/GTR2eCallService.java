@@ -4,6 +4,7 @@ import android.telecom.Call;
 import android.telecom.InCallService;
 import android.util.Log;
 
+import com.vikas.gtr2e.GTR2eApp;
 import com.vikas.gtr2e.utils.GTR2eManager;
 
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ public class GTR2eCallService extends InCallService {
         Log.d(TAG, "onCallAdded: ID=" + callId + ", State=" + call.getDetails().getState());
         activeCalls.put(callId, call);
 
-        if(call.getDetails().getState() == Call.STATE_RINGING && getGtr2eManager() != null && getBleService() != null) {
+        if(call.getDetails().getState() == Call.STATE_RINGING && getBleService() != null) {
             Log.e(TAG, "onCallAdded: "+call.getDetails().getHandle().getSchemeSpecificPart());
             String callerName = call.getDetails().getCallerDisplayName();
             Log.d(TAG, "onCallAdded: Caller name=" + callerName);
@@ -48,11 +49,11 @@ public class GTR2eCallService extends InCallService {
                 Log.d(TAG, "onStateChanged: " + state);
                 if (state == Call.STATE_DISCONNECTED) {
                     activeCalls.remove(String.valueOf(call.hashCode()));
-                    if (getGtr2eManager() != null && getBleService() != null) {
+                    if (getBleService() != null) {
                         getBleService().setCallStatus(GTR2eBleService.CALL_STATUS.ENDED, call.getDetails().getCallerDisplayName());
                     }
                 } else if (state == Call.STATE_ACTIVE) {
-                    if (getGtr2eManager() != null && getBleService() != null) {
+                    if (getBleService() != null) {
                         getBleService().setCallStatus(GTR2eBleService.CALL_STATUS.PICKED, call.getDetails().getCallerDisplayName());
                     }
                 }
@@ -60,14 +61,14 @@ public class GTR2eCallService extends InCallService {
         });
     }
 
-    private GTR2eManager getGtr2eManager() {
-        return GTR2eManager.getInstance(getApplicationContext());
-    }
 
     private GTR2eBleService getBleService() {
-        return getGtr2eManager().getBleService();
+        if(GTR2eApp.getGTR2eManager()!=null) {
+            return GTR2eApp.getGTR2eManager().getBleService();
+        } else {
+            return null;
+        }
     }
-
     @Override
     public void onCallRemoved(Call call) {
         super.onCallRemoved(call);

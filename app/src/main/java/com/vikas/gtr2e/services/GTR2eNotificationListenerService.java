@@ -4,6 +4,7 @@ import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
+import com.vikas.gtr2e.GTR2eApp;
 import com.vikas.gtr2e.utils.GTR2eManager;
 
 /**
@@ -23,7 +24,7 @@ public class GTR2eNotificationListenerService extends NotificationListenerServic
     public void onNotificationPosted(StatusBarNotification sbn) {
         // Handle notification posted if needed
         Log.i(TAG, "Notification posted: " + sbn.getPackageName());
-        if (getGtr2eManager()!=null && getBleService()!=null) {
+        if (getBleService()!=null) {
             getBleService().updateMediaController();
         }
     }
@@ -34,11 +35,11 @@ public class GTR2eNotificationListenerService extends NotificationListenerServic
         Log.i(TAG, "Notification removed: " + sbn.getPackageName());
     }
 
-    private GTR2eManager getGtr2eManager() {
-        return GTR2eManager.getInstance(getApplicationContext());
-    }
-
     private GTR2eBleService getBleService() {
-        return getGtr2eManager().getBleService();
+        if(GTR2eApp.getGTR2eManager()!=null) {
+            return GTR2eApp.getGTR2eManager().getBleService();
+        } else {
+            return null;
+        }
     }
 }

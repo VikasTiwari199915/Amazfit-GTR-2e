@@ -8,6 +8,7 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.util.Log;
 
+import com.vikas.gtr2e.GTR2eApp;
 import com.vikas.gtr2e.beans.DeviceInfo;
 import com.vikas.gtr2e.beans.HuamiBatteryInfo;
 import com.vikas.gtr2e.interfaces.ConnectionCallback;
@@ -294,6 +295,7 @@ public class GTR2eManager {
                 instance.startAndBindService();
             }
         }
+        GTR2eApp.setGTR2eManager(instance);
         return instance;
     }
 

@@ -24,6 +24,7 @@ import android.companion.CompanionDeviceManager;
 import android.companion.ObservingDevicePresenceRequest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.MediaMetadata;
 import android.media.session.MediaController;
 import android.media.session.PlaybackState;
@@ -36,6 +37,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
 import com.vikas.gtr2e.beans.DeviceInfo;
 import com.vikas.gtr2e.beans.MusicBean;
@@ -308,11 +310,12 @@ public class GTR2eBleService extends Service {
         NotificationUtility.createNotificationChannel(context);
         NotificationUtility.startAsForegroundService(GTR2eBleService.this, deviceInfo.isConnected());
         deviceInfo.setDeviceName("Amazfit GTR 2e");
-//        registerCallReceiver();
         if (Prefs.getDeviceAdded(context)) {
             registerDevicePresence();
+            registerVolumeListener();
         }
     }
+
 
     private void initializeBluetooth() {
         BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
@@ -339,7 +342,7 @@ public class GTR2eBleService extends Service {
     public void connect() {
         if(deviceInfo.isConnected() || deviceInfo.isForceDisconnected()){
             //No need to reconnect
-            Log.e(TAG, "device already connected, skipping...");
+            Log.e(TAG, "device already connected/Force disconnected, skipping...");
             return;
         }
         if (gatt != null) {
@@ -1020,6 +1023,14 @@ public class GTR2eBleService extends Service {
                 Log.d(TAG, "Started observing device presence for: " + mac);
             }
         }
+    }
+
+
+    private void registerVolumeListener() {
+        GTR2eVolumeChangeReceiver volumeChangeReceiver = new GTR2eVolumeChangeReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction("android.media.VOLUME_CHANGED_ACTION");
+        ContextCompat.registerReceiver(this.context, volumeChangeReceiver, intentFilter, ContextCompat.RECEIVER_EXPORTED);
     }
 
     //mute call

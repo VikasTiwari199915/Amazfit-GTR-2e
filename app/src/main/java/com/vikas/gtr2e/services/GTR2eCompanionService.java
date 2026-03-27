@@ -7,7 +7,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
-import com.vikas.gtr2e.utils.GTR2eManager;
+import com.vikas.gtr2e.GTR2eApp;
 
 /**
  * CompanionDeviceService implementation for GTR2e
@@ -30,7 +30,7 @@ public class GTR2eCompanionService extends CompanionDeviceService {
     }
 
     @Override
-    public void onDevicePresenceEvent(DevicePresenceEvent event) {
+    public void onDevicePresenceEvent(@NonNull DevicePresenceEvent event) {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
             int type = event.getEvent();
@@ -54,11 +54,9 @@ public class GTR2eCompanionService extends CompanionDeviceService {
     }
 
     private void reconnectWatch(){
-        getGtr2eManager().connect();
-    }
-
-    private GTR2eManager getGtr2eManager() {
-        return GTR2eManager.getInstance(getApplicationContext());
+        if(GTR2eApp.getGTR2eManager()!=null) {
+            GTR2eApp.getGTR2eManager().connect();
+        }
     }
 
 

@@ -390,8 +390,10 @@ public class MainActivity extends AppCompatActivity {
 
         if (gtr2eManager.isConnected()) {
             gtr2eManager.disconnect();
+            gtr2eManager.getDeviceInfo().setForceDisconnected(true);
         } else {
             binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_searching_24);
+            gtr2eManager.getDeviceInfo().setForceDisconnected(false);
             gtr2eManager.startScan();
         }
     }
