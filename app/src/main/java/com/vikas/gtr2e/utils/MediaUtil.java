@@ -1,5 +1,11 @@
 package com.vikas.gtr2e.utils;
 
+import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_ALBUM;
+import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_ARTIST;
+import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_DURATION;
+import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_STATE;
+import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_TRACK;
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.media.AudioManager;
@@ -19,6 +25,8 @@ import com.vikas.gtr2e.beans.MusicStateBean;
 import com.vikas.gtr2e.enums.MusicControl;
 import com.vikas.gtr2e.services.GTR2eNotificationListenerService;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.List;
 
 import lombok.Getter;
@@ -149,4 +157,79 @@ public class MediaUtil {
         }
         return state;
     }
+
+    public static byte[] encodeMusicState(final MusicBean musicSpec, final MusicStateBean musicStateBean) {
+        String artist = "";
+        String album = "";
+        String track = "";
+
+        byte flags = 0x00;
+        int length = 1;
+
+        if (musicStateBean != null) {
+            length += 4;
+            flags |= MUSIC_FLAG_STATE;
+        }
+
+        if (musicSpec != null) {
+            artist = StringUtils.truncate(musicSpec.artist, 80);
+            album = StringUtils.truncate(musicSpec.album, 80);
+            track = StringUtils.truncate(musicSpec.track, 80);
+
+            if (artist.getBytes().length > 0) {
+                length += artist.getBytes().length + 1;
+                flags |= MUSIC_FLAG_ARTIST;
+            }
+            if (album.getBytes().length > 0) {
+                length += album.getBytes().length + 1;
+                flags |= MUSIC_FLAG_ALBUM;
+            }
+            if (track.getBytes().length > 0) {
+                length += track.getBytes().length + 1;
+                flags |= MUSIC_FLAG_TRACK;
+            }
+            if (musicSpec.duration != 0) {
+                length += 2;
+                flags |= MUSIC_FLAG_DURATION;
+            }
+        }
+
+        ByteBuffer buf = ByteBuffer.allocate(length);
+        buf.order(ByteOrder.LITTLE_ENDIAN);
+        buf.put(flags);
+
+        if (musicStateBean != null) {
+            byte state;
+            if (musicStateBean.state == (byte) MusicStateBean.STATE_PLAYING) {
+                state = 1;
+            } else {
+                state = 0;
+            }
+
+            buf.put(state);
+            buf.put((byte) 0);
+            buf.putShort((short) musicStateBean.position);
+        }
+
+        if (musicSpec != null) {
+            if (artist.getBytes().length > 0) {
+                buf.put(artist.getBytes());
+                buf.put((byte) 0);
+            }
+            if (album.getBytes().length > 0) {
+                buf.put(album.getBytes());
+                buf.put((byte) 0);
+            }
+            if (track.getBytes().length > 0) {
+                buf.put(track.getBytes());
+                buf.put((byte) 0);
+            }
+            if (musicSpec.duration != 0) {
+                buf.putShort((short) musicSpec.duration);
+            }
+        }
+
+        return buf.array();
+    }
+
 }

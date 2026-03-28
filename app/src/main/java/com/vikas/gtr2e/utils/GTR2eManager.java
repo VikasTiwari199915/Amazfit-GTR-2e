@@ -68,7 +68,8 @@ public class GTR2eManager {
                 break;
             case "TEST":
 //                bleService.setCallStatus(GTR2eBleService.CALL_STATUS.INCOMING, "Hello World!");
-                bleService.setTime();
+//                bleService.setTime();
+                bleService.testNotifications(args[0], args[1], args[2]);
             default:
                 break;
         }

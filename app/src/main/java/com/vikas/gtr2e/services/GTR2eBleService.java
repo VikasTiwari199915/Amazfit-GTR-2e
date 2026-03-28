@@ -3,11 +3,6 @@ package com.vikas.gtr2e.services;
 import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_INDICATE;
 import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_NOTIFY;
 import static com.vikas.gtr2e.ble.HuamiService.COMMAND_DO_NOT_DISTURB_AUTOMATIC;
-import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_ALBUM;
-import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_ARTIST;
-import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_DURATION;
-import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_STATE;
-import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_TRACK;
 import static com.vikas.gtr2e.ble.HuamiService.MUSIC_FLAG_VOLUME;
 
 import android.annotation.SuppressLint;
@@ -48,13 +43,14 @@ import com.vikas.gtr2e.ble.Huami2021ChunkedEncoder;
 import com.vikas.gtr2e.ble.Huami2021Handler;
 import com.vikas.gtr2e.ble.HuamiService;
 import com.vikas.gtr2e.ble.InfoHandler;
+import com.vikas.gtr2e.enums.CALL_STATUS;
 import com.vikas.gtr2e.enums.MusicControl;
 import com.vikas.gtr2e.interfaces.ConnectionCallback;
 import com.vikas.gtr2e.utils.ConversionUtil;
+import com.vikas.gtr2e.utils.GTR2eNotificationUtil;
 import com.vikas.gtr2e.utils.MediaUtil;
 import com.vikas.gtr2e.utils.NotificationUtility;
 import com.vikas.gtr2e.utils.Prefs;
-import com.vikas.gtr2e.utils.StringUtils;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -102,6 +98,8 @@ public class GTR2eBleService extends Service {
     private static final byte[] stopHeartMeasurementManual = new byte[]{0x15, COMMAND_SET_HR_MANUAL, 0};
     private static final byte[] startHeartMeasurementContinuous = new byte[]{0x15, COMMAND_SET__HR_CONTINUOUS, 1};
     private static final byte[] stopHeartMeasurementContinuous = new byte[]{0x15, COMMAND_SET__HR_CONTINUOUS, 0};
+    public static final String ANDROID_MEDIA_VOLUME_CHANGED_ACTION = "android.media.VOLUME_CHANGED_ACTION";
+    public static final String COM_VIKAS_GTR_2_E_MUTE_CALL = "com.vikas.gtr2e.MUTE_CALL";
     @Getter
     private final DeviceInfo deviceInfo = new DeviceInfo();
     private final Queue<Runnable> bleOperations = new LinkedList<>();
@@ -730,6 +728,14 @@ public class GTR2eBleService extends Service {
         enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION, cmd, "Change Date Format");
     }
 
+    public void changeTimeFormat(boolean is24HourFormat) {
+        if(is24HourFormat){
+            enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION, HuamiService.DATEFORMAT_TIME_24_HOURS, "Change Date Format");
+        } else {
+            enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION, HuamiService.DATEFORMAT_TIME_12_HOURS, "Change Date Format");
+        }
+    }
+
     public void heartRateMonitoring(boolean enable) {
         if (enable) {
             enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_HEART_RATE_CONTROL_POINT, stopHeartMeasurementContinuous, "Disabling Continuous Heart Rate Measurement");
@@ -853,8 +859,6 @@ public class GTR2eBleService extends Service {
 
     public void onMusicAppOpenOnWatch(boolean opened) {
         this.isMusicAppOpen = opened;
-        //Send the music state after a small delay. If we send it right as the app notifies us that it opened, it won't be recognized.
-//        MediaUtil.refresh(getApplicationContext());
         if(opened) {
             MediaUtil.refresh(context);
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
@@ -865,117 +869,24 @@ public class GTR2eBleService extends Service {
     }
 
     protected void sendMusicStateToDevice(final MusicBean musicBean, final MusicStateBean musicStateBean) {
-        if(!isMusicAppOpen) {
+        if(!isMusicAppOpen || characteristicChunked2021Write == null || musicBean == null || musicStateBean == null) {
             return;
         }
-        if (characteristicChunked2021Write == null) {
-            return;
-        }
-        if (musicStateBean == null) {
-            return;
-        }
-        writeToChunkedOld(3, encodeMusicState(musicBean, musicStateBean));
+        writeToChunkedOld(3, MediaUtil.encodeMusicState(musicBean, musicStateBean));
         Log.i(TAG,"sendMusicStateToDevice: "+ musicBean+", "+musicStateBean);
     }
 
-    public static byte[] encodeMusicState(final MusicBean musicSpec, final MusicStateBean musicStateBean) {
-        String artist = "";
-        String album = "";
-        String track = "";
-
-        byte flags = 0x00;
-        int length = 1;
-
-        if (musicStateBean != null) {
-            length += 4;
-            flags |= MUSIC_FLAG_STATE;
-        }
-
-        if (musicSpec != null) {
-            artist = StringUtils.truncate(musicSpec.artist, 80);
-            album = StringUtils.truncate(musicSpec.album, 80);
-            track = StringUtils.truncate(musicSpec.track, 80);
-
-            if (artist.getBytes().length > 0) {
-                length += artist.getBytes().length + 1;
-                flags |= MUSIC_FLAG_ARTIST;
-            }
-            if (album.getBytes().length > 0) {
-                length += album.getBytes().length + 1;
-                flags |= MUSIC_FLAG_ALBUM;
-            }
-            if (track.getBytes().length > 0) {
-                length += track.getBytes().length + 1;
-                flags |= MUSIC_FLAG_TRACK;
-            }
-            if (musicSpec.duration != 0) {
-                length += 2;
-                flags |= MUSIC_FLAG_DURATION;
-            }
-        }
-
-        ByteBuffer buf = ByteBuffer.allocate(length);
-        buf.order(ByteOrder.LITTLE_ENDIAN);
-        buf.put(flags);
-
-        if (musicStateBean != null) {
-            byte state;
-            if (musicStateBean.state == (byte) MusicStateBean.STATE_PLAYING) {
-                state = 1;
-            } else {
-                state = 0;
-            }
-
-            buf.put(state);
-            buf.put((byte) 0);
-            buf.putShort((short) musicStateBean.position);
-        }
-
-        if (musicSpec != null) {
-            if (artist.getBytes().length > 0) {
-                buf.put(artist.getBytes());
-                buf.put((byte) 0);
-            }
-            if (album.getBytes().length > 0) {
-                buf.put(album.getBytes());
-                buf.put((byte) 0);
-            }
-            if (track.getBytes().length > 0) {
-                buf.put(track.getBytes());
-                buf.put((byte) 0);
-            }
-            if (musicSpec.duration != 0) {
-                buf.putShort((short) musicSpec.duration);
-            }
-        }
-
-        return buf.array();
-    }
 
     public void setCallStatus(CALL_STATUS callStatus, String caller) {
-
         Log.e(TAG, "CALLER_NAME = "+caller);
-
         if (callStatus == CALL_STATUS.INCOMING) {
-            if (caller == null || caller.trim().isEmpty()) {
-                caller = "Unknown";
-            }
-            byte[] prefix = new byte[]{3, 0, 0, 0, 0, 0};
-            byte[] message = caller.getBytes(StandardCharsets.UTF_8);
-            byte[] suffix = new byte[]{0, 0, 0, 2};
-            int length = prefix.length + message.length + suffix.length;
-            ByteBuffer buf = ByteBuffer.allocate(length);
-            buf.order(ByteOrder.LITTLE_ENDIAN);
-            buf.put(prefix); // Prefix - for call status info
-            buf.put(message);
-            buf.put(suffix); // Suffix - end of message
-            writeToChunkedOld(0, buf.array());
-
+            sendIncomingCallAlert(caller);
         } else if ((callStatus == CALL_STATUS.PICKED) || (callStatus == CALL_STATUS.ENDED)) {
             writeToChunkedOld(0, new byte[]{3, 3, 0, 0, 0, 0});
         }
     }
 
+    //Does not work needs fix
     public void setTime() {
         Calendar timestamp = ConversionUtil.createCalendar();
         timestamp.set(2025,9,20);
@@ -1002,10 +913,6 @@ public class GTR2eBleService extends Service {
 
     @Override
     public void onTaskRemoved(Intent rootIntent) {
-        // Optional: Restart service when user removes app from recent tasks
-        // Intent restartService = new Intent(this, GTR2eBleService.class);
-        // restartService.setPackage(getPackageName());
-        // startService(restartService);
         super.onTaskRemoved(rootIntent);
     }
 
@@ -1025,25 +932,22 @@ public class GTR2eBleService extends Service {
         }
     }
 
-
     private void registerVolumeListener() {
         GTR2eVolumeChangeReceiver volumeChangeReceiver = new GTR2eVolumeChangeReceiver();
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction("android.media.VOLUME_CHANGED_ACTION");
+        intentFilter.addAction(ANDROID_MEDIA_VOLUME_CHANGED_ACTION);
         ContextCompat.registerReceiver(this.context, volumeChangeReceiver, intentFilter, ContextCompat.RECEIVER_EXPORTED);
     }
 
     //mute call
     public void muteCall() {
-        Intent intent = new Intent("com.vikas.gtr2e.MUTE_CALL");
+        Intent intent = new Intent(COM_VIKAS_GTR_2_E_MUTE_CALL);
         sendBroadcast(intent);
     }
 
     private byte[] getBytesFromHex(String hex) {
         hex = hex.replace("0x", "");
-
         byte[] bytes = new byte[hex.length() / 2];
-
         for (int i = 0; i < hex.length(); i += 2) {
             bytes[i / 2] = (byte) Integer.parseInt(hex.substring(i, i + 2), 16);
         }
@@ -1066,33 +970,21 @@ public class GTR2eBleService extends Service {
         if(control == MusicControl.VOLUME_UP || control == MusicControl.VOLUME_DOWN) {
             onSetPhoneVolume(MediaUtil.getPhoneVolume(getApplicationContext()));
         }
-//        else {
-//            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-//                MediaUtil.refresh(getApplicationContext());
-//                sendMusicStateToDevice(MediaUtil.bufferMusicBean, MediaUtil.bufferMusicStateBean);
-//            },100);
-//        }
     }
 
     public void updateMediaController() {
         MediaController newController = MediaUtil.getMediaController(getApplicationContext());
-
         if (newController == null) return;
-
-        // same session → ignore
+        // same session -> ignore
         if (currentController != null && currentController.getSessionToken().equals(newController.getSessionToken())) {
             return;
         }
-
         Log.d("MEDIA", "Switching media session");
-
         // unregister old
         if (currentController != null && mediaCallback != null) {
             currentController.unregisterCallback(mediaCallback);
         }
-
         currentController = newController;
-
         // create callback
         mediaCallback = new MediaController.Callback() {
             @Override
@@ -1102,13 +994,12 @@ public class GTR2eBleService extends Service {
                     updateMediaController();
                     return;
                 }
-                Log.d("MEDIA", "Playback changed");
+                Log.d("MEDIA", "Playback changed: " + state.getState());
                 MusicStateBean newState = MediaUtil.extractMusicStateBean(state);
                 if(!MediaUtil.bufferMusicStateBean.equals(newState)) {
                     MediaUtil.bufferMusicStateBean = MediaUtil.extractMusicStateBean(state);
                     sendMusicStateToDevice(MediaUtil.bufferMusicBean, MediaUtil.bufferMusicStateBean);
                 }
-
             }
 
             @Override
@@ -1125,9 +1016,18 @@ public class GTR2eBleService extends Service {
                     sendMusicStateToDevice(MediaUtil.bufferMusicBean, MediaUtil.bufferMusicStateBean);
                 }
             }
+
+            @Override
+            public void onSessionDestroyed() {
+                super.onSessionDestroyed();
+                Log.e("MEDIA", "Session Destroyed");
+                if (currentController != null && mediaCallback != null) {
+                    currentController.unregisterCallback(mediaCallback);
+                }
+            }
         };
 
-        currentController.registerCallback(mediaCallback);
+        currentController.registerCallback(mediaCallback, new Handler(Looper.getMainLooper()));
 
         // push initial state immediately
         MediaUtil.bufferMusicBean = MediaUtil.extractMusicBean(currentController.getMetadata());
@@ -1135,7 +1035,32 @@ public class GTR2eBleService extends Service {
         sendMusicStateToDevice(MediaUtil.bufferMusicBean, MediaUtil.bufferMusicStateBean);
     }
 
-    public enum CALL_STATUS {INCOMING, PICKED, ENDED}
+    public void testNotifications(String packageName, String appName,String message) {
+//        onNotification(packageName, appName, message);
+        writeToChunkedOld(0, GTR2eNotificationUtil.getWeatherAlertData("26 C temperature in Bhubaneswar, Odisha", "Test"));
+    }
+
+
+    public void onNotification(String packageName, String sourceName, String message) {
+        if(!deviceInfo.isConnected() || !deviceInfo.isAuthenticated() || characteristicChunked2021Write == null){
+            return;
+        }
+        writeToChunkedOld(GTR2eNotificationUtil.NOTIFICATION_WRITE_TYPE, GTR2eNotificationUtil.getNotificationData(packageName, sourceName, message));
+    }
+
+    public void sendMissedCallAlert(String contactName) {
+        if(!deviceInfo.isConnected() || !deviceInfo.isAuthenticated() || characteristicChunked2021Write == null){
+            return;
+        }
+        writeToChunkedOld(GTR2eNotificationUtil.NOTIFICATION_WRITE_TYPE, GTR2eNotificationUtil.getMissedCallAlertData(contactName));
+    }
+
+    public void sendIncomingCallAlert(String contactName) {
+        if(!deviceInfo.isConnected() || !deviceInfo.isAuthenticated() || characteristicChunked2021Write == null){
+            return;
+        }
+        writeToChunkedOld(GTR2eNotificationUtil.NOTIFICATION_WRITE_TYPE, GTR2eNotificationUtil.getIncomingCallAlertData(contactName));
+    }
 
     // Binder class for clients to access this service
     public class LocalBinder extends Binder {

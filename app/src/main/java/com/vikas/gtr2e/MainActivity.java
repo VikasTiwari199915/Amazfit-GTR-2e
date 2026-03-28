@@ -145,7 +145,10 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         binding.testBtn.setOnClickListener(v->{
-            if (gtr2eManager != null) gtr2eManager.performAction("TEST");
+            if (gtr2eManager != null) gtr2eManager.performAction("TEST",
+                    binding.packageNameInputText.getEditText().getText().toString(),
+                    binding.appNameInputText.getEditText().getText().toString(),
+                    binding.messageInputText.getEditText().getText().toString());
         });
 
         isProgrammaticallyChangingKeepRunningInBackground = true;

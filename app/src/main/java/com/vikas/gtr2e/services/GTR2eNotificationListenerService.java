@@ -1,11 +1,15 @@
 package com.vikas.gtr2e.services;
 
+import android.app.Notification;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
 import com.vikas.gtr2e.GTR2eApp;
-import com.vikas.gtr2e.utils.GTR2eManager;
+import com.vikas.gtr2e.utils.GTR2eNotificationUtil;
 
 /**
  * NotificationListenerService implementation for GTR2e
@@ -24,15 +28,69 @@ public class GTR2eNotificationListenerService extends NotificationListenerServic
     public void onNotificationPosted(StatusBarNotification sbn) {
         // Handle notification posted if needed
         Log.i(TAG, "Notification posted: " + sbn.getPackageName());
-        if (getBleService()!=null) {
-            getBleService().updateMediaController();
+
+        handleNotification(sbn);
+    }
+
+    private void handleNotification(StatusBarNotification sbn) {
+        if (getBleService() != null) {
+            Notification notification = sbn.getNotification();
+            Bundle extras = notification.extras;
+            if (extras != null) {
+                CharSequence title = extras.getCharSequence(Notification.EXTRA_TITLE);
+                CharSequence text = extras.getCharSequence(Notification.EXTRA_TEXT);
+                CharSequence subText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT);
+                CharSequence template = extras.getCharSequence(Notification.EXTRA_TEMPLATE);
+
+                String packageName = sbn.getPackageName();
+
+                Log.d("NOTIF", "App: " + packageName);
+                Log.d("NOTIF", "Title: " + title);
+                Log.d("NOTIF", "Text: " + text);
+                Log.d("NOTIF", "SubText: " + subText);
+
+                if (!isMediaSessionNotification(notification)) {
+                    logBundleData(extras);
+                    String source, message;
+                    if (isMessageType(template) || GTR2eNotificationUtil.shouldUseSenderAsSource(packageName, 1)) {
+                        source = title != null ? title.toString() : getAppName(sbn.getPackageName());
+                        message = text != null ? text.toString() : (subText != null ? subText.toString() : "");
+                    } else {
+                        source = getAppName(sbn.getPackageName());
+                        message = (title != null ? title.toString() : "") + "\n" + (text != null ? text.toString() : "");
+                    }
+                    if (isCallType(template)) {
+                        GTR2eCallService.addNotificationForActiveCall(sbn);
+                        getBleService().sendIncomingCallAlert(source);
+                    } else {
+                        getBleService().onNotification(sbn.getPackageName(), source, message);
+                    }
+                } else {
+                    if (getBleService() != null) {
+                        getBleService().updateMediaController();
+                    }
+                }
+            } else {
+                Log.w(TAG, "Posted notification has no extras");
+            }
         }
+
     }
 
     @Override
     public void onNotificationRemoved(StatusBarNotification sbn) {
         // Handle notification removed if needed
         Log.i(TAG, "Notification removed: " + sbn.getPackageName());
+        if (getBleService()!=null) {
+            Notification notification = sbn.getNotification();
+            Bundle extras = notification.extras;
+            if (extras != null) {
+                CharSequence template = extras.getCharSequence(Notification.EXTRA_TEMPLATE);
+                if(isCallType(template)) {
+                    GTR2eCallService.removeNotificationForActiveCall();
+                }
+            }
+        }
     }
 
     private GTR2eBleService getBleService() {
@@ -41,5 +99,43 @@ public class GTR2eNotificationListenerService extends NotificationListenerServic
         } else {
             return null;
         }
+    }
+
+    private boolean isMediaSessionNotification(Notification notification) {
+        return (notification.extras!=null && notification.extras.containsKey(Notification.EXTRA_MEDIA_SESSION))
+                || Notification.CATEGORY_TRANSPORT.equals(notification.category);
+    }
+
+    private String getAppName(String packageName){
+        try {
+            PackageManager pm = getPackageManager();
+            ApplicationInfo ai = pm.getApplicationInfo(packageName, 0);
+            return pm.getApplicationLabel(ai).toString();
+        } catch (PackageManager.NameNotFoundException e) {
+            return "Unknown App";
+        }
+    }
+
+    private void logBundleData(Bundle bundle) {
+        if (bundle != null) {
+            for (String key : bundle.keySet()) {
+                Object value = bundle.get(key);
+                Log.d("BUNDLE", key + " = " + value);
+            }
+        }
+    }
+
+    private boolean isMessageType(CharSequence template) {
+        if(template!=null){
+            return template.equals("android.app.Notification$InboxStyle");
+        }
+        return false;
+    }
+
+    private boolean isCallType(CharSequence template) {
+        if(template!=null){
+            return template.equals("android.app.Notification$CallStyle");
+        }
+        return false;
     }
 }
