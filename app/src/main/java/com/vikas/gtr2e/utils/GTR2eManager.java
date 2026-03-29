@@ -69,7 +69,7 @@ public class GTR2eManager {
             case "TEST":
 //                bleService.setCallStatus(GTR2eBleService.CALL_STATUS.INCOMING, "Hello World!");
 //                bleService.setTime();
-                bleService.testNotifications(args[0], args[1], args[2]);
+                bleService.setWatchFaceAtIndex(Integer.parseInt(args[0].trim()));
             default:
                 break;
         }

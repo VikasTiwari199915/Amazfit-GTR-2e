@@ -1,0 +1,61 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:title="Settings">
+
+    <PreferenceCategory app:title="General">
+        <EditTextPreference
+            android:key="authKey"
+            android:selectAllOnFocus="true"
+            android:singleLine="false"
+            android:title="Watch Auth Key"
+            app:dialogIcon="@drawable/outline_key_24"
+            app:dialogMessage="DO NOT CHANGE!! (Unless you know what you are doing)"
+            app:dialogTitle="Auth Key"
+            app:enableCopying="true"
+            app:icon="@drawable/outline_key_24"
+            app:summary="Key needed for authenticating with watch" />
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="keepServiceRunningInBG"
+            android:title="Keep running in background"
+            app:summary="Keep GTR 2e service running in the background even if app is cleared from recent apps." />
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="authCheckForAppUpdates"
+            android:title="Check App Updates"
+            app:icon="@drawable/outline_apk_install_24"
+            app:summary="Automatically check for app updates when app is opened." />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:icon="@drawable/rounded_notifications_24"
+        app:title="Watch Notifications">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:icon="@drawable/rounded_phone_enabled_24"
+            app:key="enable_voip_call_alerts"
+            app:summary="Call alerts for apps like Whatsapp, instagram etc."
+            app:title="Enable Voip call Alerts" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:icon="@drawable/round_person_24"
+        app:title="About">
+        <Preference
+            app:key="version"
+            app:selectable="true"
+            app:summary="Not Available"
+            app:title="Version" />
+        <Preference
+            app:selectable="true"
+            app:summary="This app heavily relies on the hard work of the GadgetBridge project and its contributers for its Authentication, encryption/decryption of payload logics and reverse-engineered commands for device operations.\nAlso this app uses logic from python project HuaToken for its initial Zepp/Xiaomi login and auth key fetch."
+            app:title="Credits" />
+        <Preference
+            app:selectable="true"
+            app:summary="Vikas Tiwari"
+            app:title="Developed By" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

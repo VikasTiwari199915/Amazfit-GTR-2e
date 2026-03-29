@@ -1,16 +1,29 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Theme.GTR2eApp" parent="Theme.Material3.DynamicColors.DayNight.NoActionBar">
-        <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/accent_color</item>
         <item name="colorPrimaryVariant">@color/purple_700</item>
         <item name="colorOnPrimary">@color/white</item>
-        <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/teal_200</item>
         <item name="colorSecondaryVariant">@color/teal_700</item>
         <item name="colorOnSecondary">@color/black</item>
-        <!-- Status bar color. -->
         <item name="android:statusBarColor" >?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
+
+        <item name="colorPrimary">@color/material_dynamic_primary70</item>
+        <item name="colorAccent">@color/material_dynamic_primary70</item>
+        <item name="colorSecondary">@color/material_dynamic_primary50</item>
+        <item name="colorTertiary">@color/material_dynamic_secondary30</item>
+        <item name="colorError">#FFB4AB</item>
+        <item name="colorErrorContainer">#93000A</item>
+
+        <item name="preferenceTheme">@style/MyStyle.Preference.v21</item>
+    </style>
+    <style name="Theme.BottomNavigationView.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">?attr/colorTertiary</item>
+    </style>
+    <style name="Preference.SwitchPreferenceCompat" parent="@style/Preference.SwitchPreferenceCompat.Material" tools:ignore="ResourceCycle">
+        <item name="widgetLayout">@layout/preference_switch</item>
+    </style>
+    <style name="MyStyle.Preference.v21" parent="@style/PreferenceThemeOverlay.v14.Material">
+        <item name="android:iconTint">@color/accent_color</item>
     </style>
 </resources>

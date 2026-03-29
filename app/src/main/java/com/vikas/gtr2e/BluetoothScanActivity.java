@@ -20,8 +20,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -32,9 +30,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.google.android.material.button.MaterialButton;
 import com.vikas.gtr2e.databinding.ActivityBluetoothScanBinding;
-import com.vikas.gtr2e.databinding.ActivityMainBinding;
 import com.vikas.gtr2e.utils.Prefs;
 
 public class BluetoothScanActivity extends AppCompatActivity {
@@ -157,7 +153,7 @@ public class BluetoothScanActivity extends AppCompatActivity {
         Prefs.setLastDeviceMac(this, device.getAddress());
         Prefs.setDeviceAdded(getApplicationContext(),true);
 
-        Intent intent = new Intent(this, MainActivity.class);
+        Intent intent = new Intent(this, HomeActivity.class);
         intent.putExtra("DEVICE_ADDED_JUST_NOW", true);
         startActivity(intent);
         finish();

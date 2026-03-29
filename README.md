@@ -39,7 +39,7 @@ The application is built using modern Android development practices:
 This project stands on the shoulders of giants in the open-source community. Special thanks to:
 
 - **[Gadgetbridge](https://gadgetbridge.org/)**: For their invaluable work in reverse-engineering the Huami protocol. Significant portions of the BLE handling logic and protocol definitions are inspired by or adapted from the Gadgetbridge codebase and its contributors.
-- **[HuaFetcher](https://codeberg.org/vanous/huafetcher/pulls/5)**: For providing the methodology and inspiration for the Zepp cloud authentication and key retrieval logic. Check out the project for more technical details.
+- **[HuaToken](https://codeberg.org/argrento/huami-token/)**: For providing the methodology and inspiration for the Zepp cloud authentication and key retrieval logic. Check out the project for more technical details.
 
 ## License
 

@@ -8,7 +8,7 @@ import android.telecom.InCallService;
 import android.util.Log;
 
 import com.vikas.gtr2e.GTR2eApp;
-import com.vikas.gtr2e.enums.CALL_STATUS;
+import com.vikas.gtr2e.enums.CallStatus;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,7 +43,7 @@ public class GTR2eCallService extends InCallService {
             if(callerName==null || callerName.isEmpty()){
                 callerName = call.getDetails().getHandle().getSchemeSpecificPart();
             }
-            getBleService().setCallStatus(CALL_STATUS.INCOMING, callerName);
+            getBleService().setCallStatus(CallStatus.INCOMING, callerName);
         }
 
         call.registerCallback(new Call.Callback() {
@@ -54,11 +54,11 @@ public class GTR2eCallService extends InCallService {
                 if (state == Call.STATE_DISCONNECTED) {
                     activeCalls.remove(String.valueOf(call.hashCode()));
                     if (getBleService() != null) {
-                        getBleService().setCallStatus(CALL_STATUS.ENDED, call.getDetails().getCallerDisplayName());
+                        getBleService().setCallStatus(CallStatus.ENDED, call.getDetails().getCallerDisplayName());
                     }
                 } else if (state == Call.STATE_ACTIVE) {
                     if (getBleService() != null) {
-                        getBleService().setCallStatus(CALL_STATUS.PICKED, call.getDetails().getCallerDisplayName());
+                        getBleService().setCallStatus(CallStatus.PICKED, call.getDetails().getCallerDisplayName());
                     }
                 }
             }
@@ -127,7 +127,7 @@ public class GTR2eCallService extends InCallService {
     public static void removeNotificationForActiveCall(){
         activeCallNotification = null;
         if(getBleService()!=null) {
-            getBleService().setCallStatus(CALL_STATUS.ENDED, "");
+            getBleService().setCallStatus(CallStatus.ENDED, "");
         }
     }
 }

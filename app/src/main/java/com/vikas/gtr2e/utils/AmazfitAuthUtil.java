@@ -24,7 +24,7 @@ import java.util.*;
 import tools.jackson.databind.ObjectMapper;
 
 /*
- * Based on auth logic from HuaFetcher project
+ * Based on auth logic from HuaToken project
  * recreated in java by Vikas Tiwari
  */
 

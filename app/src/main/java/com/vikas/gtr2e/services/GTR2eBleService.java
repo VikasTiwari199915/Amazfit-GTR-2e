@@ -43,18 +43,16 @@ import com.vikas.gtr2e.ble.Huami2021ChunkedEncoder;
 import com.vikas.gtr2e.ble.Huami2021Handler;
 import com.vikas.gtr2e.ble.HuamiService;
 import com.vikas.gtr2e.ble.InfoHandler;
-import com.vikas.gtr2e.enums.CALL_STATUS;
+import com.vikas.gtr2e.enums.CallStatus;
 import com.vikas.gtr2e.enums.MusicControl;
 import com.vikas.gtr2e.interfaces.ConnectionCallback;
 import com.vikas.gtr2e.utils.ConversionUtil;
 import com.vikas.gtr2e.utils.GTR2eNotificationUtil;
+import com.vikas.gtr2e.utils.GTR2eWatchFaceUtil;
 import com.vikas.gtr2e.utils.MediaUtil;
 import com.vikas.gtr2e.utils.NotificationUtility;
 import com.vikas.gtr2e.utils.Prefs;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -877,11 +875,11 @@ public class GTR2eBleService extends Service {
     }
 
 
-    public void setCallStatus(CALL_STATUS callStatus, String caller) {
+    public void setCallStatus(CallStatus callStatus, String caller) {
         Log.e(TAG, "CALLER_NAME = "+caller);
-        if (callStatus == CALL_STATUS.INCOMING) {
+        if (callStatus == CallStatus.INCOMING) {
             sendIncomingCallAlert(caller);
-        } else if ((callStatus == CALL_STATUS.PICKED) || (callStatus == CALL_STATUS.ENDED)) {
+        } else if ((callStatus == CallStatus.PICKED) || (callStatus == CallStatus.ENDED)) {
             writeToChunkedOld(0, new byte[]{3, 3, 0, 0, 0, 0});
         }
     }
@@ -1033,6 +1031,10 @@ public class GTR2eBleService extends Service {
         MediaUtil.bufferMusicBean = MediaUtil.extractMusicBean(currentController.getMetadata());
         MediaUtil.bufferMusicStateBean = MediaUtil.extractMusicStateBean(currentController.getPlaybackState());
         sendMusicStateToDevice(MediaUtil.bufferMusicBean, MediaUtil.bufferMusicStateBean);
+    }
+
+    public void setWatchFaceAtIndex(int index) {
+        enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION,GTR2eWatchFaceUtil.setWatchFaceAtIndex(index), "Set watch face");
     }
 
     public void testNotifications(String packageName, String appName,String message) {

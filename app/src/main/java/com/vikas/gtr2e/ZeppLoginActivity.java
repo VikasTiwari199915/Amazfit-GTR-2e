@@ -51,7 +51,7 @@ public class ZeppLoginActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
 
         if (Prefs.getDeviceAdded(getApplicationContext())) {
-            startActivity(new Intent(this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            startActivity(new Intent(this, HomeActivity.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             finish();
         }
 

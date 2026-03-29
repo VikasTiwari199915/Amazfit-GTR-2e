@@ -120,6 +120,14 @@ public class Huami2021ChunkedDecoder {
                     hexdump(buf, 0, buf.length))
             );
 
+            if(!encrypted) {
+                try {
+                    String plainText = bytesToAscii(buf);
+                    Log.e(TAG, "Plaintext: "+plainText);
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to parse ascii", e);
+                }
+            }
             try {
                 huami2021Handler.handle2021Payload((short) currentType, buf);
             } catch (final Exception e) {
@@ -129,6 +137,10 @@ public class Huami2021ChunkedDecoder {
         }
 
         return needsAck;
+    }
+
+    public static String bytesToAscii(byte[] data) {
+        return new String(data, java.nio.charset.StandardCharsets.US_ASCII);
     }
 
     public void reset() {

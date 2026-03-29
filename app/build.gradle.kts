@@ -19,14 +19,12 @@ android {
         minSdk = 31
         targetSdk = 36
         versionCode = 1
-        versionName = "1.1.2"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        versionName = "1.1.3"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -55,8 +53,12 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converterGson)
     implementation(libs.loggingInterceptor)
+    implementation(libs.fragment)
+    implementation(libs.preference)
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
     implementation(libs.jacksonDatabind)
     implementation(libs.jacksonAnnotations)
+    implementation(libs.navigationUI)
+    implementation(libs.navigationFragment)
 }

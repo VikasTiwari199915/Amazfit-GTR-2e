@@ -3,28 +3,33 @@ package com.vikas.gtr2e.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import androidx.preference.PreferenceManager;
+
 /**
  * Utility class for shared preferences
+ *
  * @author Vikas Tiwari
  */
 public class Prefs {
-    public static final String PREF_NAME = "prefs";
     public static final String PREF_KEEP_SERVICE_RUNNING_IN_BG = "keepServiceRunningInBG";
     public static final String PREF_LAST_DEVICE_MAC = "lastDeviceMac";
     public static final String PREF_AUTH_KEY = "authKey";
     public static final String PREF_DEVICE_ADDED = "deviceAdded";
     public static final String PREF_LAST_DEVICE_ASSOCIATION = "PREF_LAST_DEVICE_ASSOCIATION";
+    public static final String PREF_ENABLE_VOIP_ALERTS = "enable_voip_call_alerts";
+    public static final String PREF_AUTO_APP_UPDATES =  "authCheckForAppUpdates";
 
 
     public static boolean getDeviceAdded(Context context) {
         return getPrefs(context).getBoolean(PREF_DEVICE_ADDED, false);
     }
+
     public static void setDeviceAdded(Context context, boolean deviceAdded) {
         getPrefs(context).edit().putBoolean(PREF_DEVICE_ADDED, deviceAdded).apply();
     }
 
     private static SharedPreferences getPrefs(Context context) {
-        return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        return PreferenceManager.getDefaultSharedPreferences(context);
     }
 
     public static boolean getKeepServiceRunningInBG(Context context) {
@@ -57,5 +62,13 @@ public class Prefs {
 
     public static void setLastDeviceAssociationId(Context context, int id) {
         getPrefs(context).edit().putInt(PREF_LAST_DEVICE_ASSOCIATION, id).apply();
+    }
+
+    public static boolean getVoipCallAlertsEnabled(Context context) {
+        return getPrefs(context).getBoolean(PREF_ENABLE_VOIP_ALERTS, true);
+    }
+
+    public static boolean getAutoAppUpdatesEnabled(Context context) {
+        return getPrefs(context).getBoolean(PREF_AUTO_APP_UPDATES, true);
     }
 }

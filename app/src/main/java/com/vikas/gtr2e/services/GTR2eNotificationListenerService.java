@@ -10,10 +10,12 @@ import android.util.Log;
 
 import com.vikas.gtr2e.GTR2eApp;
 import com.vikas.gtr2e.utils.GTR2eNotificationUtil;
+import com.vikas.gtr2e.utils.Prefs;
 
 /**
  * NotificationListenerService implementation for GTR2e
  * Notifies when notification is posted or removed
+ *
  * @author Vikas Tiwari
  */
 public class GTR2eNotificationListenerService extends NotificationListenerService {
@@ -33,7 +35,8 @@ public class GTR2eNotificationListenerService extends NotificationListenerServic
     }
 
     private void handleNotification(StatusBarNotification sbn) {
-        if (getBleService() != null) {
+        GTR2eBleService bleService = getBleService();
+        if (bleService != null) {
             Notification notification = sbn.getNotification();
             Bundle extras = notification.extras;
             if (extras != null) {
@@ -59,16 +62,14 @@ public class GTR2eNotificationListenerService extends NotificationListenerServic
                         source = getAppName(sbn.getPackageName());
                         message = (title != null ? title.toString() : "") + "\n" + (text != null ? text.toString() : "");
                     }
-                    if (isCallType(template)) {
+                    if (Prefs.getVoipCallAlertsEnabled(getApplicationContext()) && isCallType(template)) {
                         GTR2eCallService.addNotificationForActiveCall(sbn);
-                        getBleService().sendIncomingCallAlert(source);
+                        bleService.sendIncomingCallAlert(source);
                     } else {
-                        getBleService().onNotification(sbn.getPackageName(), source, message);
+                        bleService.onNotification(sbn.getPackageName(), source, message);
                     }
                 } else {
-                    if (getBleService() != null) {
-                        getBleService().updateMediaController();
-                    }
+                    bleService.updateMediaController();
                 }
             } else {
                 Log.w(TAG, "Posted notification has no extras");
@@ -81,12 +82,12 @@ public class GTR2eNotificationListenerService extends NotificationListenerServic
     public void onNotificationRemoved(StatusBarNotification sbn) {
         // Handle notification removed if needed
         Log.i(TAG, "Notification removed: " + sbn.getPackageName());
-        if (getBleService()!=null) {
+        if (getBleService() != null) {
             Notification notification = sbn.getNotification();
             Bundle extras = notification.extras;
             if (extras != null) {
                 CharSequence template = extras.getCharSequence(Notification.EXTRA_TEMPLATE);
-                if(isCallType(template)) {
+                if (isCallType(template)) {
                     GTR2eCallService.removeNotificationForActiveCall();
                 }
             }
@@ -94,7 +95,7 @@ public class GTR2eNotificationListenerService extends NotificationListenerServic
     }
 
     private GTR2eBleService getBleService() {
-        if(GTR2eApp.getGTR2eManager()!=null) {
+        if (GTR2eApp.getGTR2eManager() != null) {
             return GTR2eApp.getGTR2eManager().getBleService();
         } else {
             return null;
@@ -102,11 +103,11 @@ public class GTR2eNotificationListenerService extends NotificationListenerServic
     }
 
     private boolean isMediaSessionNotification(Notification notification) {
-        return (notification.extras!=null && notification.extras.containsKey(Notification.EXTRA_MEDIA_SESSION))
+        return (notification.extras != null && notification.extras.containsKey(Notification.EXTRA_MEDIA_SESSION))
                 || Notification.CATEGORY_TRANSPORT.equals(notification.category);
     }
 
-    private String getAppName(String packageName){
+    private String getAppName(String packageName) {
         try {
             PackageManager pm = getPackageManager();
             ApplicationInfo ai = pm.getApplicationInfo(packageName, 0);
@@ -126,14 +127,14 @@ public class GTR2eNotificationListenerService extends NotificationListenerServic
     }
 
     private boolean isMessageType(CharSequence template) {
-        if(template!=null){
+        if (template != null) {
             return template.equals("android.app.Notification$InboxStyle");
         }
         return false;
     }
 
     private boolean isCallType(CharSequence template) {
-        if(template!=null){
+        if (template != null) {
             return template.equals("android.app.Notification$CallStyle");
         }
         return false;

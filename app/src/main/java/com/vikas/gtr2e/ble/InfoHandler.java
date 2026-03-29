@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.UUID;
+
 /*
  * Based on code from Gadgetbridge:
  * https://codeberg.org/Freeyourgadget/Gadgetbridge
@@ -177,62 +178,16 @@ public class InfoHandler {
                 break;
             case HuamiDeviceEvent.MUSIC_CONTROL:
                 Log.i(TAG, "got music control");
-                switch (value[1]) {
-                    case 0:
-                        Log.i(TAG, "Music control play");
-                        bleService.setMusicControl(MusicControl.PLAY);
-                        break;
-                    case 1:
-                        Log.i(TAG, "Music control pause");
-                        bleService.setMusicControl(MusicControl.PAUSE);
-                        break;
-                    case 3:
-                        Log.i(TAG, "Music control next");
-                        bleService.setMusicControl(MusicControl.NEXT);
-                        break;
-                    case 4:
-                        Log.i(TAG, "Music control previous");
-                        bleService.setMusicControl(MusicControl.PREVIOUS);
-                        break;
-                    case 5:
-                        Log.i(TAG, "Music control volume up");
-                        bleService.setMusicControl(MusicControl.VOLUME_UP);
-                        break;
-                    case 6:
-                        Log.i(TAG, "Music control volume down");
-                        bleService.setMusicControl(MusicControl.VOLUME_DOWN);
-                        break;
-                    case (byte) 224:
-                        Log.i(TAG, "Music control Music app opened");
-                        bleService.onMusicAppOpenOnWatch(true);
-                        break;
-                    case (byte) 225:
-                        Log.i(TAG, "Music control Music app closed");
-                        bleService.onMusicAppOpenOnWatch(false);
-                        break;
-                    default:
-                        Log.i(TAG, "unhandled music control event " + value[1]);
-                        return;
-                }
-//                evaluateGBDeviceEvent(deviceEventMusicControl);
+                handleMediaControlEvent(value, bleService);
                 break;
             case HuamiDeviceEvent.MTU_REQUEST:
                 int mtu = (value[2] & 0xff) << 8 | value[1] & 0xff;
                 Log.i(TAG, "device announced MTU of " + mtu);
                 bleService.setMtu(mtu);
-//                setMtu(mtu);
-                /*
-                 * not really sure if this would make sense, is this event already a proof of a successful MTU
-                 * negotiation initiated by the Huami device, and acknowledged by the phone? do we really have to
-                 * requestMTU() from our side after receiving this?
-                 * /
-                if (mMTU != mtu) {
-                    requestMTU(mtu);
-                }
-                */
                 break;
             case HuamiDeviceEvent.WORKOUT_STARTING:
-                Log.i(TAG, "Workout Started");
+                final boolean needsGps = value[2] == 1;
+                Log.i(TAG, "Workout Started: GPS Needed->" + needsGps);
 //                final HuamiWorkoutTrackActivityType activityType = HuamiWorkoutTrackActivityType.fromCode(value[3]);
 //                final ActivityKind activityKind;
 
@@ -243,7 +198,6 @@ public class InfoHandler {
 //                    activityKind = activityType.toActivityKind();
 //                }
 
-                final boolean needsGps = value[2] == 1;
 
 //                Log.i(TAG,"Workout starting on band: {}, needs gps = {}", activityType, needsGps);
 
@@ -252,6 +206,46 @@ public class InfoHandler {
                 break;
             default:
                 Log.w(TAG, "unhandled device event " + String.format("0x%02x", value[0]));
+        }
+    }
+
+    private static void handleMediaControlEvent(byte[] value, GTR2eBleService bleService) {
+        switch (value[1]) {
+            case 0:
+                Log.i(TAG, "Music control play");
+                bleService.setMusicControl(MusicControl.PLAY);
+                break;
+            case 1:
+                Log.i(TAG, "Music control pause");
+                bleService.setMusicControl(MusicControl.PAUSE);
+                break;
+            case 3:
+                Log.i(TAG, "Music control next");
+                bleService.setMusicControl(MusicControl.NEXT);
+                break;
+            case 4:
+                Log.i(TAG, "Music control previous");
+                bleService.setMusicControl(MusicControl.PREVIOUS);
+                break;
+            case 5:
+                Log.i(TAG, "Music control volume up");
+                bleService.setMusicControl(MusicControl.VOLUME_UP);
+                break;
+            case 6:
+                Log.i(TAG, "Music control volume down");
+                bleService.setMusicControl(MusicControl.VOLUME_DOWN);
+                break;
+            case (byte) 224:
+                Log.i(TAG, "Music control Music app opened");
+                bleService.onMusicAppOpenOnWatch(true);
+                break;
+            case (byte) 225:
+                Log.i(TAG, "Music control Music app closed");
+                bleService.onMusicAppOpenOnWatch(false);
+                break;
+            default:
+                Log.i(TAG, "unhandled music control event " + value[1]);
+                return;
         }
     }
 

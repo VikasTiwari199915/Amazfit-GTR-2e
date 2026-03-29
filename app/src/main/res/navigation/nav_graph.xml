@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright (c) 2024. All rights reserved.
+  ~ File : nav_graph.xml, Last Modified on : 12/16/24, 9:34 PM
+  ~ Created by Vikas Tiwari.
+  ~ Do not copy/modify without permission.
+  ~ For any contact email at Vikastiwari199915@gmail.com
+  -->
+
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph.xml"
+    android:label="fragment_home"
+    app:startDestination="@id/homeFragment">
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.vikas.gtr2e.HomeFragment"
+        android:label="fragment_home"
+        tools:layout="@layout/fragment_home" />
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.vikas.gtr2e.SettingsFragment"
+        android:label="fragment_settings" />
+    <fragment
+        android:id="@+id/healthFragment"
+        android:name="com.vikas.gtr2e.HealthFragment"
+        android:label="fragment_health"
+        tools:layout="@layout/fragment_health" />
+    <fragment
+        android:id="@+id/testingFragment"
+        android:name="com.vikas.gtr2e.TestingFragment"
+        android:label="fragment_testing"
+        tools:layout="@layout/fragment_testing" />
+</navigation>
