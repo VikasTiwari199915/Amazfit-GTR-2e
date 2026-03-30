@@ -12,6 +12,7 @@ import com.vikas.gtr2e.GTR2eApp;
 import com.vikas.gtr2e.beans.DeviceInfo;
 import com.vikas.gtr2e.beans.HuamiBatteryInfo;
 import com.vikas.gtr2e.interfaces.ConnectionCallback;
+import com.vikas.gtr2e.interfaces.ConnectionListener;
 import com.vikas.gtr2e.services.GTR2eBleService;
 import com.vikas.gtr2e.services.GTR2eCallService;
 
@@ -69,24 +70,13 @@ public class GTR2eManager {
             case "TEST":
 //                bleService.setCallStatus(GTR2eBleService.CALL_STATUS.INCOMING, "Hello World!");
 //                bleService.setTime();
-                bleService.setWatchFaceAtIndex(Integer.parseInt(args[0].trim()));
+//                bleService.setWatchFaceWithId(Integer.parseInt(args[0].trim()));
+                bleService.requestWatchFaceIdList();
             default:
                 break;
         }
     }
 
-    public interface ConnectionListener {
-        void onBackgroundServiceBound(boolean bound);
-        void onConnectedChanged(boolean connected);
-        void onAuthenticated();
-        void onBatteryInfoUpdated(HuamiBatteryInfo batteryInfo);
-        void onError(String error);
-        void onHeartRateChanged(int heartRate);
-        void onHeartRateMonitoringChanged(boolean enabled);
-        void findPhoneStateChanged(boolean started);
-        void pendingBleProcessChanged(int count);
-        void onDeviceInfoChanged(DeviceInfo deviceInfo);
-    }
 
     private GTR2eManager(Context context) {
         this.applicationContext = context.getApplicationContext(); // Ensure it's application context
@@ -167,6 +157,13 @@ public class GTR2eManager {
             @Override
             public void setMtu(int mtu) {
 
+            }
+
+            @Override
+            public void onWatchFaceSet(boolean success) {
+                if (connectionListener != null) {
+                    connectionListener.onWatchFaceSet(success);
+                }
             }
 
             @Override

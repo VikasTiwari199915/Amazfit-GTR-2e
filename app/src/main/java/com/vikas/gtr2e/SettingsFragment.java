@@ -8,13 +8,16 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.core.graphics.drawable.DrawableCompat;
+import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceGroup;
 
-import com.mikhaellopez.circularprogressbar.BuildConfig;
 import com.vikas.gtr2e.utils.AppAutoUpdater;
+import com.vikas.gtr2e.utils.TimePreference;
+import com.vikas.gtr2e.utils.TimePreferenceDialogFragment;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
 
@@ -39,12 +42,13 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         setPreferencesFromResource(R.xml.root_preferences, rootKey);
         int colorAttr = android.R.attr.colorAccent;
 
-        TypedArray ta = requireContext().getTheme().obtainStyledAttributes(new int[]{colorAttr});
-        int iconColor = ta.getColor(0, 0);
-        ta.recycle();
-        tintIcons(getPreferenceScreen(), iconColor);
+        try (TypedArray ta = requireContext().getTheme().obtainStyledAttributes(new int[]{colorAttr})) {
+            int iconColor = ta.getColor(0, 0);
+            tintIcons(getPreferenceScreen(), iconColor);
+        }
 
         setVersionName();
+        findPreference("heart_rate_measure_at_every").setSummaryProvider(preference -> ((ListPreference) preference).getEntry());
     }
 
     private void setVersionName() {
@@ -64,6 +68,18 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 Toast.makeText(requireContext(), "Copied!", Toast.LENGTH_SHORT).show();
                 return true;
             });
+        }
+    }
+
+    @Override
+    public void onDisplayPreferenceDialog(@NonNull Preference preference) {
+        if (preference instanceof TimePreference) {
+            TimePreferenceDialogFragment fragment = TimePreferenceDialogFragment.newInstance(preference.getKey());
+
+            fragment.setTargetFragment(this, 0);
+            fragment.show(getParentFragmentManager(), "TimePicker");
+        } else {
+            super.onDisplayPreferenceDialog(preference);
         }
     }
 }

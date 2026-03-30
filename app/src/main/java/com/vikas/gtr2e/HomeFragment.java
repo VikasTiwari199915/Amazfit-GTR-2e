@@ -38,6 +38,7 @@ import androidx.fragment.app.Fragment;
 import com.vikas.gtr2e.beans.DeviceInfo;
 import com.vikas.gtr2e.beans.HuamiBatteryInfo;
 import com.vikas.gtr2e.databinding.FragmentHomeBinding;
+import com.vikas.gtr2e.interfaces.ConnectionListener;
 import com.vikas.gtr2e.utils.AppAutoUpdater;
 import com.vikas.gtr2e.utils.GTR2eManager;
 import com.vikas.gtr2e.utils.MediaUtil;
@@ -192,7 +193,7 @@ public class HomeFragment extends Fragment {
 
     private void initGTR2eManager() {
         gtr2eManager = GTR2eManager.getInstance(requireContext());
-        GTR2eManager.ConnectionListener connectionListener = new GTR2eManager.ConnectionListener() {
+        ConnectionListener connectionListener = new ConnectionListener() {
 
             @Override
             public void onBackgroundServiceBound(boolean bound) {
@@ -308,6 +309,15 @@ public class HomeFragment extends Fragment {
             public void onDeviceInfoChanged(DeviceInfo deviceInfo) {
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> updateDeviceInfo());
+                }
+            }
+
+            @Override
+            public void onWatchFaceSet(boolean success) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        Toast.makeText(getContext(), success ? "Watch face set successfully" : "Failed to set watch face", Toast.LENGTH_SHORT).show();
+                    });
                 }
             }
 

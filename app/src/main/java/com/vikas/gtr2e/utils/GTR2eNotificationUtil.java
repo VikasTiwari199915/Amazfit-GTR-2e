@@ -145,8 +145,12 @@ public class GTR2eNotificationUtil {
     private static final HashMap<String, Integer> senderAsSourceMap = new HashMap<>();
     static {
         senderAsSourceMap.put("com.whatsapp", 1);
-        senderAsSourceMap.put("KEY2", 2);
-        senderAsSourceMap.put("KEY3", 3);
+        senderAsSourceMap.put("com.telegram.messenger", 2);
+        senderAsSourceMap.put("jp.naver.line.android", 3);
+        senderAsSourceMap.put("com.snapchat.android", 3);
+        senderAsSourceMap.put("org.telegram.messenger.beta", 3);
+        senderAsSourceMap.put("org.telegram.messenger.web", 3);
+        senderAsSourceMap.put("org.telegram.plus", 3);
     }
 
 }

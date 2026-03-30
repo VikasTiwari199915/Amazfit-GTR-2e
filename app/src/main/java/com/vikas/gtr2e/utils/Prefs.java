@@ -17,7 +17,7 @@ public class Prefs {
     public static final String PREF_DEVICE_ADDED = "deviceAdded";
     public static final String PREF_LAST_DEVICE_ASSOCIATION = "PREF_LAST_DEVICE_ASSOCIATION";
     public static final String PREF_ENABLE_VOIP_ALERTS = "enable_voip_call_alerts";
-    public static final String PREF_AUTO_APP_UPDATES =  "authCheckForAppUpdates";
+    public static final String PREF_AUTO_APP_UPDATES =  "autoCheckForAppUpdates";
 
 
     public static boolean getDeviceAdded(Context context) {

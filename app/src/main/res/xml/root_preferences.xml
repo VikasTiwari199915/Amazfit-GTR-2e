@@ -17,11 +17,12 @@
         <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="keepServiceRunningInBG"
-            android:title="Keep running in background"
+            android:title="Keep Running In Background"
+            app:icon="@drawable/rounded_linked_services_24"
             app:summary="Keep GTR 2e service running in the background even if app is cleared from recent apps." />
         <SwitchPreferenceCompat
             android:defaultValue="true"
-            android:key="authCheckForAppUpdates"
+            android:key="autoCheckForAppUpdates"
             android:title="Check App Updates"
             app:icon="@drawable/outline_apk_install_24"
             app:summary="Automatically check for app updates when app is opened." />
@@ -36,23 +37,141 @@
             app:icon="@drawable/rounded_phone_enabled_24"
             app:key="enable_voip_call_alerts"
             app:summary="Call alerts for apps like Whatsapp, instagram etc."
-            app:title="Enable Voip call Alerts" />
+            app:title="Voip Call Alerts" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:icon="@drawable/rounded_phone_missed_24"
+            app:key="enable_missed_call_alerts"
+            app:summary="Any missed call alert when watch was not connected will be reminded."
+            app:title="Missed Call Alerts" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:icon="@drawable/rounded_mobile_sound_off_24"
+            app:key="enable_phone_disconnection_alerts"
+            app:summary="Watch will show phone disconnection alert."
+            app:title="Phone Disconnection Alerts" />
 
     </PreferenceCategory>
+
+    <PreferenceCategory
+        app:icon="@drawable/rounded_notifications_24"
+        app:title="Watch Settings">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:icon="@drawable/rounded_monitor_heart_24"
+            app:key="wrist_list_watch_wakeup"
+            app:summary="Lifting wrist will wake up the watch."
+            app:title="Lift Wrist To Wake Watch" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:icon="@drawable/outline_award_star_24"
+            app:key="enable_goal_completion_alerts"
+            app:summary="Alerts when goal is completed."
+            app:title="Enable Goal Completion Alerts" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:icon="@drawable/rounded_bluetooth_searching_24"
+            app:key="watch_discoverable_when_connected"
+            app:summary="Watch will be discoverable even when connected."
+            app:title="Watch Discoverable when connected" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:icon="@drawable/rounded_monitor_heart_24"
+            app:key="third_party_hr_access"
+            app:summary="3rd party app can access HR data"
+            app:title="3rd Party HR access" />
+
+        <ListPreference
+            android:defaultValue="1"
+            android:entries="@array/minute_interval_list_entries"
+            android:entryValues="@array/minute_interval_list_values"
+            android:key="heart_rate_measure_at_every"
+            android:title="Whole Day Heart Rate Measurement"
+            app:icon="@drawable/rounded_ecg_heart_24"
+            app:summary="Select time interval for heart rate measurement" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:icon="@drawable/rounded_notifications_24"
+        app:title="Watch Inactivity Alert">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:icon="@drawable/outline_airline_seat_recline_normal_24"
+            app:key="enable_inactivity_alerts"
+            app:summary="Alerts when watch detects that wearer is inactive for a while."
+            app:title="Enable Inactivity Alerts" />
+
+        <ListPreference
+            app:dependency="enable_inactivity_alerts"
+            android:defaultValue="1"
+            android:entries="@array/minute_interval_list_entries"
+            android:entryValues="@array/minute_interval_list_values"
+            android:key="inactivity_time_interval"
+            android:title="Inactivity Time Interval"
+            app:summary="Select time interval for inactivity alerts" />
+
+        <com.vikas.gtr2e.utils.TimePreference
+            app:defaultValue="08:00"
+            app:dependency="enable_inactivity_alerts"
+            app:key="inactivity_start_time"
+            app:summary="Select time interval"
+            app:title="Inactivity Alert Start Time" />
+
+        <com.vikas.gtr2e.utils.TimePreference
+            app:defaultValue="08:00"
+            app:dependency="enable_inactivity_alerts"
+            app:key="inactivity_end_time"
+            app:summary="Select time interval"
+            app:title="Inactivity Alert End Time" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:dependency="enable_inactivity_alerts"
+            app:icon="@drawable/twotone_do_not_disturb_on_24"
+            app:key="enable_inactivity_dnd"
+            app:summary="Alerts will not appear in below time frame"
+            app:title="No Inactivity Alert In Time Frame" />
+
+        <com.vikas.gtr2e.utils.TimePreference
+            app:defaultValue="08:00"
+            app:dependency="enable_inactivity_dnd"
+            app:key="inactivity_dnd_start_time"
+            app:summary="Select time interval"
+            app:title="DND Start Time" />
+
+        <com.vikas.gtr2e.utils.TimePreference
+            app:defaultValue="08:00"
+            app:dependency="enable_inactivity_dnd"
+            app:key="inactivity_dnd_end_time"
+            app:summary="Select time interval"
+            app:title="DND End Time" />
+
+    </PreferenceCategory>
+
 
     <PreferenceCategory
         app:icon="@drawable/round_person_24"
         app:title="About">
         <Preference
+            app:icon="@drawable/outline_numbers_24"
             app:key="version"
             app:selectable="true"
             app:summary="Not Available"
             app:title="Version" />
         <Preference
+            app:icon="@drawable/outline_info_24"
             app:selectable="true"
             app:summary="This app heavily relies on the hard work of the GadgetBridge project and its contributers for its Authentication, encryption/decryption of payload logics and reverse-engineered commands for device operations.\nAlso this app uses logic from python project HuaToken for its initial Zepp/Xiaomi login and auth key fetch."
             app:title="Credits" />
         <Preference
+            app:icon="@drawable/outline_code_xml_24"
             app:selectable="true"
             app:summary="Vikas Tiwari"
             app:title="Developed By" />

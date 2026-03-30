@@ -8,10 +8,12 @@ import com.vikas.gtr2e.beans.HuamiBatteryInfo;
 import com.vikas.gtr2e.enums.MusicControl;
 import com.vikas.gtr2e.interfaces.ConnectionCallback;
 import com.vikas.gtr2e.services.GTR2eBleService;
+import com.vikas.gtr2e.utils.GTR2eWatchFaceUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 /*
@@ -70,7 +72,7 @@ public class InfoHandler {
             handleRealtimeSteps(value, deviceInfo, connectionCallback);
         } else if (HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING CONFIGURATION INFO :: " + Arrays.toString(value));
-//            handleConfigurationInfo(value);
+            handleConfigurationInfo(value, connectionCallback);
         } else if (HuamiService.UUID_CHARACTERISTIC_CHUNKEDTRANSFER_2021_READ.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING CHUNKED TRANSFER INFO :: " + Arrays.toString(value));
             Log.e(TAG, "CHUNKED TRANSFER INFO String Value :: " + new String(value));
@@ -95,6 +97,62 @@ public class InfoHandler {
         }
     }
 
+    private static final byte MODULE_CONFIG = 0x10;
+    private static final byte MODULE_DATA = (byte) 0x80;
+
+    // Subcommands (under CONFIG module)
+    private static final byte SUB_WATCHFACE = (byte) 0xFE;
+
+
+    // Status codes
+    private static final byte STATUS_SUCCESS = 0x01;
+
+    private static void handleConfigurationInfo(byte[] value, ConnectionCallback connectionCallback) {
+        if (value == null || value.length < 2) {
+            Log.e(TAG, "Packet too short : " + Arrays.toString(value));
+            return;
+        }
+
+        byte module = value[0];
+        byte subCommand = value[1];
+
+        if (module == MODULE_CONFIG) {
+            Log.d(TAG, "Module (Known) - MODULE_CONFIG : " + module);
+            switch (subCommand) {
+                case SUB_WATCHFACE:
+                    handleWatchfaceResponse(value, connectionCallback);
+                    break;
+                default:
+                    Log.e(TAG, "Unknown subcommand : " + Arrays.toString(value));
+            }
+        } else if(module == MODULE_DATA) {
+            Log.d(TAG, "Module (Known) - MODULE_DATA : " + module);
+            if(subCommand == STATUS_SUCCESS) {
+                List<Integer> ids = GTR2eWatchFaceUtil.parseWatchFaceList(value);
+                Log.d(TAG, "Parsed Watchfaces: " + ids);
+//                if (connectionCallback != null) {
+//                    connectionCallback.onWatchFaceListReceived(ids);
+//                }
+            } else {
+                Log.e(TAG, "Unknown subcommand in data module : " + Arrays.toString(value));
+            }
+        } else {
+            Log.e(TAG, "Unknown config module : " + module);
+        }
+    }
+
+
+    private static void handleWatchfaceResponse(byte[] value, ConnectionCallback connectionCallback) {
+        if (value.length < 5) {
+            Log.e(TAG, "Watchface response too short: " + Arrays.toString(value));
+            return;
+        }
+        boolean success = value[4] == STATUS_SUCCESS;
+        Log.d(TAG, "Watchface set result: " + success);
+        if (connectionCallback != null) {
+            connectionCallback.onWatchFaceSet(success);
+        }
+    }
 
     private static void handleRealtimeSteps(byte[] value, DeviceInfo deviceInfo, ConnectionCallback connectionCallback) {
         if (value == null) {

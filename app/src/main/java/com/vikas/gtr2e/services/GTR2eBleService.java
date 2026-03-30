@@ -515,6 +515,7 @@ public class GTR2eBleService extends Service {
                 } else {
                     Log.e(TAG, "Authentication failed");
                     deviceInfo.setAuthenticated(false);
+                    connectionCallback.onError("Failed to authenticate with the watch, please try again or clear app data and reconnect.");
                 }
                 break;
 
@@ -1033,13 +1034,18 @@ public class GTR2eBleService extends Service {
         sendMusicStateToDevice(MediaUtil.bufferMusicBean, MediaUtil.bufferMusicStateBean);
     }
 
-    public void setWatchFaceAtIndex(int index) {
-        enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION,GTR2eWatchFaceUtil.setWatchFaceAtIndex(index), "Set watch face");
+    public void setWatchFaceWithId(int id) {
+        enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION,GTR2eWatchFaceUtil.setWatchFaceById(id), "Set watch face");
+    }
+
+    public void requestWatchFaceIdList() {
+        enqueueWriteCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION,GTR2eWatchFaceUtil.getWatchFaceListCommand(), "Get Watch Id List");
     }
 
     public void testNotifications(String packageName, String appName,String message) {
 //        onNotification(packageName, appName, message);
         writeToChunkedOld(0, GTR2eNotificationUtil.getWeatherAlertData("26 C temperature in Bhubaneswar, Odisha", "Test"));
+
     }
 
 

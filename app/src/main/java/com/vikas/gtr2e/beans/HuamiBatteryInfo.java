@@ -4,6 +4,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.vikas.gtr2e.interfaces.ConnectionListener;
 import com.vikas.gtr2e.utils.GTR2eManager;
 
 /*
@@ -72,7 +73,7 @@ public class HuamiBatteryInfo {
         return "Battery: " + getLevelInPercent() + "% (" + getStateString() + ")";
     }
 
-    public static void processReceivedBatteryData(byte[] data, GTR2eManager.ConnectionListener connectionListener) {
+    public static void processReceivedBatteryData(byte[] data, ConnectionListener connectionListener) {
         if (data == null || data.length == 0) {
             return;
         }

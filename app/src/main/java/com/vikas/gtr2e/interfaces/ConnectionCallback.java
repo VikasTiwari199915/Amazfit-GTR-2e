@@ -6,7 +6,7 @@ import com.vikas.gtr2e.beans.DeviceInfo;
 import com.vikas.gtr2e.beans.HuamiBatteryInfo;
 
 /**
- * Interface for BLE connection callbacks
+ * Interface for BLE connection callbacks to GTR2eApp Manager
  * @author Vikas Tiwari
  */
 public interface ConnectionCallback {
@@ -33,4 +33,6 @@ public interface ConnectionCallback {
     void onCallRejected();
 
     void setMtu(int mtu);
+
+    void onWatchFaceSet(boolean success);
 }
