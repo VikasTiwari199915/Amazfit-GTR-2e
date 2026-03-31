@@ -31,7 +31,7 @@ public class AppAutoUpdater {
     }
 
     public static void checkForUpdates(Context context, AppUpdateListener listener) {
-        GitHubApiService apiService = RetrofitClient.getGithubApiService();
+        GitHubApiService apiService = RetrofitClient.getGithubApiService(context);
         apiService.getReleases().enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<List<GithubRelease>> call, @NonNull Response<List<GithubRelease>> response) {

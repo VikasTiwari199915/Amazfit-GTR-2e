@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 
 import androidx.preference.PreferenceManager;
 
+import com.vikas.gtr2e.ZeppLoginActivity;
+
 /**
  * Utility class for shared preferences
  *
@@ -18,6 +20,12 @@ public class Prefs {
     public static final String PREF_LAST_DEVICE_ASSOCIATION = "PREF_LAST_DEVICE_ASSOCIATION";
     public static final String PREF_ENABLE_VOIP_ALERTS = "enable_voip_call_alerts";
     public static final String PREF_AUTO_APP_UPDATES =  "autoCheckForAppUpdates";
+    public static final String IS_ZEPP_ACCOUNT_LOGIN = "zeppAccountLogin";
+    public static final String ZEPP_COUNTRY_CODE = "zeppCountryCode";
+    public static final String ZEPP_REGION = "zeppRegion";
+    public static final String ZEPP_USER_ID = "zeppUserId";
+    public static final String ZEPP_LOGIN_TOKEN = "zeppLoginToken";
+    public static final String ZEPP_APP_TOKEN = "zeppAppToken";
 
 
     public static boolean getDeviceAdded(Context context) {
@@ -70,5 +78,47 @@ public class Prefs {
 
     public static boolean getAutoAppUpdatesEnabled(Context context) {
         return getPrefs(context).getBoolean(PREF_AUTO_APP_UPDATES, true);
+    }
+
+    public static void setZeppAppToken(Context context, String appToken) {
+        getPrefs(context).edit().putString(ZEPP_APP_TOKEN, appToken).apply();
+    }
+    public static String getZeppAppToken(Context context) {
+        return getPrefs(context).getString(ZEPP_APP_TOKEN, "");
+    }
+
+    public static void setZeppLoginToken(Context context, String loginToken) {
+        getPrefs(context).edit().putString(ZEPP_LOGIN_TOKEN, loginToken).apply();
+    }
+    public static String getZeppLoginToken(Context context) {
+        return getPrefs(context).getString(ZEPP_LOGIN_TOKEN, "");
+    }
+
+    public static void setZeppUserId(Context context, String userId) {
+        getPrefs(context).edit().putString(ZEPP_USER_ID, userId).apply();
+    }
+    public static String getZeppUserId(Context context) {
+        return getPrefs(context).getString(ZEPP_USER_ID, "");
+    }
+
+    public static void setZeppRegion(Context context, String region) {
+        getPrefs(context).edit().putString(ZEPP_REGION, region).apply();
+    }
+    public static String getZeppRegion(Context context) {
+        return getPrefs(context).getString(ZEPP_REGION, "");
+    }
+
+    public static void setZeppCountryCode(Context context, String countryCode) {
+        getPrefs(context).edit().putString(ZEPP_COUNTRY_CODE, countryCode).apply();
+    }
+    public static String getZeppCountryCode(Context context) {
+        return getPrefs(context).getString(ZEPP_COUNTRY_CODE, "");
+    }
+
+    public static void setZeppAccountLogin(Context context, boolean zeppLogin) {
+        getPrefs(context).edit().putBoolean(IS_ZEPP_ACCOUNT_LOGIN, zeppLogin).apply();
+    }
+    public static boolean getZeppAccountLogin(Context context) {
+        return getPrefs(context).getBoolean(IS_ZEPP_ACCOUNT_LOGIN, false);
     }
 }

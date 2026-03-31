@@ -37,8 +37,8 @@ public class AmazfitAuthUtil {
     public static final String TAG = "AMAZFIT_AUTH_UTIL";
     public static final String ENC_KEY = "xeNtBVqzDc6tuNTh";
     public static final String ENC_IV  = "MAAAYAAAAAAAAABg";
-    public static final String TOKEN_URL = "https://api-user-us2.zepp.com/v2/registrations/tokens";
-    public static final String LOGIN_URL = "https://api-mifit-us2.zepp.com/v2/client/login";
+    public static final String TOKEN_URL = "https://api-user.zepp.com/v2/registrations/tokens";
+    public static final String LOGIN_URL = "https://api-mifit.zepp.com/v2/client/login";
     public static final String DEVICE_URL = "https://api-mifit.zepp.com/users/{0}/devices";
 
 

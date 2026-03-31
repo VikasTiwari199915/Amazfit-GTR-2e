@@ -8,32 +8,30 @@
     tools:context=".ZeppLoginActivity">
 
     <TextView
-        android:id="@+id/textView2"
+        android:id="@+id/titleText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
         android:fontFamily="@font/comfortaa_light"
-        android:text="Hi There!\nLogin to your Zepp Account"
+        android:text="Hi There!"
         android:textAlignment="center"
         android:textColor="?attr/colorPrimaryDark"
         android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:visibility="gone" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/usernameLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="8dp"
         android:layout_marginEnd="16dp"
         android:hint="Username / Email"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView2"
-        tools:visibility="gone">
+        app:layout_constraintTop_toBottomOf="@+id/method1TextLabel">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/usernameEdit"
@@ -53,8 +51,7 @@
         app:endIconMode="password_toggle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/usernameLayout"
-        tools:visibility="gone">
+        app:layout_constraintTop_toBottomOf="@id/usernameLayout">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/passwordEdit"
@@ -68,12 +65,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="32dp"
         android:layout_marginEnd="16dp"
-        android:text="Login"
+        android:text="Continue"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/passwordLayout" />
+        app:layout_constraintTop_toBottomOf="@+id/authKeyLayout" />
 
     <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/progressBar"
@@ -91,8 +88,7 @@
         app:trackThickness="3dp"
         app:waveAmplitude="1dp"
         app:waveSpeed="2dp"
-        app:wavelength="10dp"
-        tools:visibility="visible" />
+        app:wavelength="10dp" />
 
     <TextView
         android:id="@+id/statusText"
@@ -103,11 +99,11 @@
         android:layout_marginEnd="16dp"
         android:fontFamily="@font/comfortaa_light"
         android:textAlignment="center"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/progressBar"
-        tools:text="Getting Token"
-        tools:visibility="visible" />
+        tools:text="Getting Token" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/devicesRecyclerView"
@@ -120,8 +116,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/statusText"
         tools:itemCount="2"
-        tools:listitem="@layout/item_zepp_device"
-        tools:visibility="visible" />
+        tools:listitem="@layout/item_zepp_device" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/continueButton"
@@ -132,7 +127,51 @@
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/method1TextLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:text="Note: This app is not associated with Zepp or Amazfit.\n\nTo connect with your watch this app needs an Auth Key\n(Generated when paired with the official zepp app first time),\nThere are 2 ways to get it.\n\nMethod 1. Auto fetch from your Zepp account\n(Your data stays on your device, and is deleted when you uninstall or clear app data)"
+        android:textAlignment="center"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        tools:visibility="visible" />
+        app:layout_constraintTop_toBottomOf="@+id/titleText" />
+
+    <TextView
+        android:id="@+id/method2TextLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:text="OR\nMethod 2. You provide the auth key manually"
+        android:textAlignment="center"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/passwordLayout" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/authKeyLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/method2TextLabel">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Auth key" />
+    </com.google.android.material.textfield.TextInputLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

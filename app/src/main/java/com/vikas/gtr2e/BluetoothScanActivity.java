@@ -93,12 +93,17 @@ public class BluetoothScanActivity extends AppCompatActivity {
 
         CompanionDeviceManager deviceManager = (CompanionDeviceManager) getSystemService(Context.COMPANION_DEVICE_SERVICE);
 
-        // Filter for GTR 2e devices using its mac-address, as we only handle one device in our app anyway
-        BluetoothLeDeviceFilter deviceFilter = new BluetoothLeDeviceFilter.Builder()
-                .setScanFilter(new ScanFilter.Builder()
-                        .setDeviceAddress(Prefs.getLastDeviceMac(getApplicationContext()))
-                        .build())
-                .build();
+        // Filter for GTR 2e devices using its mac-address if zepp account login else use name filter
+        ScanFilter.Builder scanFilter = new ScanFilter.Builder();
+
+        if(Prefs.getZeppAccountLogin(getApplicationContext()) && Prefs.getLastDeviceMac(getApplicationContext())!=null) {
+            scanFilter.setDeviceAddress(Prefs.getLastDeviceMac(getApplicationContext()));
+        } else {
+            scanFilter.setDeviceName("Amazfit GTR 2e");
+        }
+
+        BluetoothLeDeviceFilter deviceFilter = new BluetoothLeDeviceFilter.Builder().setScanFilter(scanFilter.build()).build();
+
         AssociationRequest pairingRequest = new AssociationRequest.Builder()
                 .addDeviceFilter(deviceFilter)
                 .setSingleDevice(false)
