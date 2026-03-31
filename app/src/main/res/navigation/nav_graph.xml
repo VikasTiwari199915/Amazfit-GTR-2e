@@ -31,4 +31,9 @@
         android:name="com.vikas.gtr2e.TestingFragment"
         android:label="fragment_testing"
         tools:layout="@layout/fragment_testing" />
+    <fragment
+        android:id="@+id/watchFaceFragment"
+        android:name="com.vikas.gtr2e.WatchFaceFragment"
+        android:label="fragment_watch_face"
+        tools:layout="@layout/fragment_watch_face" />
 </navigation>

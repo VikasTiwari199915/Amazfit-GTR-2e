@@ -10,9 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.vikas.gtr2e.databinding.FragmentHomeBinding;
 import com.vikas.gtr2e.databinding.FragmentTestingBinding;
-import com.vikas.gtr2e.utils.GTR2eManager;
 
 public class TestingFragment extends Fragment {
 
@@ -21,7 +19,7 @@ public class TestingFragment extends Fragment {
     public TestingFragment() { }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentTestingBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }

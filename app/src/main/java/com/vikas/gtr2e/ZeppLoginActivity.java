@@ -41,12 +41,15 @@ public class ZeppLoginActivity extends AppCompatActivity {
     ZeppDeviceAdapter adapter;
 
     ActivityZeppLoginBinding binding;
+    boolean loginOnlyFlag = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         binding = ActivityZeppLoginBinding.inflate(getLayoutInflater());
-        if (Prefs.getDeviceAdded(getApplicationContext())) {
+        loginOnlyFlag = getIntent().getBooleanExtra("LOGIN_ONLY", false);
+        if (!loginOnlyFlag && Prefs.getDeviceAdded(getApplicationContext())) {
             startActivity(new Intent(this, HomeActivity.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             finish();
         }
@@ -57,6 +60,15 @@ public class ZeppLoginActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        if(loginOnlyFlag) {
+            binding.titleText.setText("Hi There!\nPlease login again");
+            binding.method2TextLabel.setVisibility(View.GONE);
+            binding.method1TextLabel.setText("Your app token has been revoked. Please login again.\nThis might have happened if you logged in to zepp account somewhere else.");
+            binding.authKeyLayout.setVisibility(View.GONE);
+            binding.loginButton.setText("Renew Session");
+        }
+
 
         binding.devicesRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
@@ -103,7 +115,11 @@ public class ZeppLoginActivity extends AppCompatActivity {
 
 
         if (username.isEmpty() || password.isEmpty() && authKey.isEmpty()) {
-            Toast.makeText(this, "Please enter username and password or auth key", Toast.LENGTH_SHORT).show();
+            if(loginOnlyFlag) {
+                Toast.makeText(this, "Please enter username and password", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Please enter username and password or auth key", Toast.LENGTH_SHORT).show();
+            }
             return;
         }
 
@@ -142,6 +158,18 @@ public class ZeppLoginActivity extends AppCompatActivity {
                 String appToken = loginResponse.getToken_info().getApp_token();
 
                 saveUserDetails(loginResponse);
+
+                if(loginOnlyFlag) {
+                    mainHandler.post(() -> {
+                        setLoading(false);
+                        Toast.makeText(ZeppLoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(this, HomeActivity.class);
+                        intent.putExtra("DEVICE_ADDED_JUST_NOW", true);
+                        startActivity(intent);
+                        finish();
+                    });
+                    return;
+                }
 
                 // 3. Fetch Devices
                 updateStatusOnMain("Fetching devices...");

@@ -16,6 +16,8 @@ import com.vikas.gtr2e.interfaces.ConnectionListener;
 import com.vikas.gtr2e.services.GTR2eBleService;
 import com.vikas.gtr2e.services.GTR2eCallService;
 
+import java.util.List;
+
 import lombok.Getter;
 
 /**
@@ -67,10 +69,15 @@ public class GTR2eManager {
             case "SET_PHONE_VOLUME":
                 bleService.onSetPhoneVolume(Float.parseFloat(args[0]));
                 break;
+            case "REQUEST_WATCHFACE_LIST":
+                bleService.requestWatchFaceIdList();
+                break;
+            case "SET_CURRENT_WATCHFACE_ID":
+                bleService.setWatchFaceWithId(Integer.parseInt(args[0].trim()));
+                break;
             case "TEST":
 //                bleService.setCallStatus(GTR2eBleService.CALL_STATUS.INCOMING, "Hello World!");
 //                bleService.setTime();
-//                bleService.setWatchFaceWithId(Integer.parseInt(args[0].trim()));
                 bleService.requestWatchFaceIdList();
             default:
                 break;
@@ -179,6 +186,13 @@ public class GTR2eManager {
                 Log.d(TAG, "Authentication successful");
                 if (connectionListener != null) {
                     connectionListener.onAuthenticated();
+                }
+            }
+
+            @Override
+            public void onWatchFaceListReceived(List<Integer> watchFaceIds) {
+                if (connectionListener != null) {
+                    connectionListener.onWatchFaceListReceived(watchFaceIds);
                 }
             }
         });

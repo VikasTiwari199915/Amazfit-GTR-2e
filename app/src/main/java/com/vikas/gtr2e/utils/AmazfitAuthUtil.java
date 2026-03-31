@@ -1,10 +1,15 @@
 package com.vikas.gtr2e.utils;
+import android.content.Context;
 import android.util.Log;
+import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import com.vikas.gtr2e.beans.ZeppCloudBeans.BuiltInWatchFace;
 import com.vikas.gtr2e.beans.zeppAuthBeans.ZeppDevicesResponse;
 import com.vikas.gtr2e.beans.zeppAuthBeans.ZeppLoginResponse;
+import com.vikas.gtr2e.interfaces.RenewTokenCallback;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -21,6 +26,9 @@ import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.*;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 import tools.jackson.databind.ObjectMapper;
 
 /*
@@ -286,5 +294,31 @@ public class AmazfitAuthUtil {
             }
         }
         return result.toString();
+    }
+
+    public static void refreshToken(Context context, RenewTokenCallback callback) {
+        RetrofitClient.getZeppApiService(context)
+                .getAppToken("com.huami.midong",Prefs.getZeppLoginToken(context),"1706_10.1.1")
+                .enqueue(new Callback<>() {
+                    @Override
+                    public void onResponse(@NonNull Call<ZeppLoginResponse> call, @NonNull Response<ZeppLoginResponse> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().getToken_info() != null) {
+                            Prefs.setZeppAppToken(context, response.body().getToken_info().getApp_token());
+                            callback.onTokenRenewSuccess(response.body().getToken_info().getApp_token());
+                        } else {
+                            if (response.body() != null && response.body().getError_code() != null) {
+                                callback.onTokenRenewFailure(response.body().getError_code());
+                            } else {
+                                callback.onTokenRenewFailure("Unknown error");
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<ZeppLoginResponse> call, @NonNull Throwable t) {
+                        Log.e(TAG, "API Failure: " + t.getMessage());
+                        Toast.makeText(context, "API Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 }

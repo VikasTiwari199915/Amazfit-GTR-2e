@@ -15,16 +15,20 @@ public class GTR2eWatchFaceUtil {
      * @return byte array of the command
      */
     public static byte[] setWatchFaceById(int id) {
+//        byte[] cmd = new byte[]{(byte) 0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+//        cmd[3] = (byte) id;
+//        return cmd;
+
         byte[] cmd = new byte[7];
 
         cmd[0] = (byte) 0xFE;
         cmd[1] = 0x00;
 
-        // little endian
-        cmd[2] = (byte) (id & 0xFF);         // LSB
-        cmd[3] = (byte) ((id >> 8) & 0xFF);  // MSB
+        // 3-byte little-endian (with leading 0)
+        cmd[2] = 0x00;
+        cmd[3] = (byte) (id & 0xFF);         // LSB
+        cmd[4] = (byte) ((id >> 8) & 0xFF);  // MSB
 
-        cmd[4] = 0x00;
         cmd[5] = 0x00;
         cmd[6] = 0x00;
 

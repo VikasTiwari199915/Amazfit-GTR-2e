@@ -43,4 +43,6 @@
     <string name="one_device_found_selected_automatically">One device found. Selected automatically.</string>
     <string name="select_your_device_from_the_list">Select your device from the list.</string>
     <string name="login_successful_but_no_devices_found">Login successful, but no devices found.</string>
+    <string name="watch_face_preview">Watch Face Preview</string>
+    <string name="selected">Selected</string>
 </resources>

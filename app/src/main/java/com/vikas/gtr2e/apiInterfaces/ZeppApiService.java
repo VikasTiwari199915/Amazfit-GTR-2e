@@ -23,7 +23,7 @@ public interface ZeppApiService {
     @GET("v1/client/app_tokens")
     Call<ZeppLoginResponse> getAppToken(
             @Query("app_name") String appName,
-            @Query("dn") String dn,
+//            @Query("dn") String dn,
             @Query("login_token") String loginToken,
             @Query("os_version") String osVersion
     );

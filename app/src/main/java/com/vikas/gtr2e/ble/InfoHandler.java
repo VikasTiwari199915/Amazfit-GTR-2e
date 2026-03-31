@@ -130,9 +130,9 @@ public class InfoHandler {
             if(subCommand == STATUS_SUCCESS) {
                 List<Integer> ids = GTR2eWatchFaceUtil.parseWatchFaceList(value);
                 Log.d(TAG, "Parsed Watchfaces: " + ids);
-//                if (connectionCallback != null) {
-//                    connectionCallback.onWatchFaceListReceived(ids);
-//                }
+                if (connectionCallback != null) {
+                    connectionCallback.onWatchFaceListReceived(ids);
+                }
             } else {
                 Log.e(TAG, "Unknown subcommand in data module : " + Arrays.toString(value));
             }

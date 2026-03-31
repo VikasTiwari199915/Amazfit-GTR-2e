@@ -14,7 +14,12 @@
         android:icon="@drawable/rounded_folder_code_24"
         android:title="Test" />
     <item
+        android:id="@+id/watchFaceFragment"
+        android:icon="@drawable/outline_nest_clock_farsight_digital_24"
+        android:title="Watch Faces" />
+    <item
         android:id="@+id/settingsFragment"
         android:icon="@drawable/rounded_event_list_24"
         android:title="Settings" />
+
 </menu>

@@ -61,4 +61,6 @@ dependencies {
     implementation(libs.jacksonAnnotations)
     implementation(libs.navigationUI)
     implementation(libs.navigationFragment)
+    implementation(libs.glide)
+    annotationProcessor(libs.glide)
 }
