@@ -6,6 +6,9 @@ import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
 
 import com.vikas.gtr2e.ZeppLoginActivity;
+import com.vikas.gtr2e.beans.ZeppCloudBeans.BuiltInWatchFace;
+
+import java.util.List;
 
 /**
  * Utility class for shared preferences
@@ -26,6 +29,9 @@ public class Prefs {
     public static final String ZEPP_USER_ID = "zeppUserId";
     public static final String ZEPP_LOGIN_TOKEN = "zeppLoginToken";
     public static final String ZEPP_APP_TOKEN = "zeppAppToken";
+    public static final String WATCH_FACES_CACHE = "watch_faces_cache";
+    public static final String LAST_SELECTED_WATCHFACE_URL = "last_selected_watchface_url";
+    public static final String LAST_SELECTED_WATCHFACE_ID = "last_selected_watchface_id";
 
 
     public static boolean getDeviceAdded(Context context) {
@@ -121,4 +127,26 @@ public class Prefs {
     public static boolean getZeppAccountLogin(Context context) {
         return getPrefs(context).getBoolean(IS_ZEPP_ACCOUNT_LOGIN, false);
     }
+
+    public static void saveWatchFaces(Context context, String json) {
+        getPrefs(context).edit().putString(WATCH_FACES_CACHE, json).apply();
+    }
+    public static String loadWatchFaces(Context context) {
+        return getPrefs(context).getString(WATCH_FACES_CACHE, null);
+    }
+
+    public static void setLastSelectedWatchFaceImageUrl(Context context, String url) {
+        getPrefs(context).edit().putString(LAST_SELECTED_WATCHFACE_URL, url).apply();
+    }
+    public static String getLastSelectedWatchFaceImageUrl(Context context) {
+        return getPrefs(context).getString(LAST_SELECTED_WATCHFACE_URL, null);
+    }
+
+    public static void setLastSelectedWatchFace(Context context, int watchFaceId) {
+        getPrefs(context).edit().putInt(LAST_SELECTED_WATCHFACE_ID, watchFaceId).apply();
+    }
+    public static int getLastSelectedWatchFace(Context context) {
+        return getPrefs(context).getInt(LAST_SELECTED_WATCHFACE_ID, -1);
+    }
+
 }

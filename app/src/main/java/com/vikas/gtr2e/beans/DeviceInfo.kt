@@ -1,49 +1,49 @@
-package com.vikas.gtr2e.beans;
+package com.vikas.gtr2e.beans
 
-import lombok.Data;
+import com.vikas.gtr2e.beans.ZeppCloudBeans.BuiltInWatchFace
 
 /**
  * Stores data for the ble device
  * @author Vikas Tiwari
  */
-@Data
-public class DeviceInfo {
-    String deviceName;
-    String deviceAddress;
-    String serialNumber;
-    String hardwareRevision;
-    String softwareRevision;
-    String systemId;
-    String pnpId;
-    int heartRate;
-    int steps;
-    int batteryPercentage;
-    String batteryStatus;
-    String chargingStatus;
-    boolean charging;
-    String lastChargedOn;
-    int lastKnownChargeLevel;
-    boolean authenticated;
-    boolean connected;
-    boolean forceDisconnected;
+class DeviceInfo {
+    var deviceName: String? = null
+    var deviceAddress: String? = null
+    var serialNumber: String? = null
+    var hardwareRevision: String? = null
+    var softwareRevision: String? = null
+    var systemId: String? = null
+    var pnpId: String? = null
+    var heartRate: Int = 0
+    var steps: Int = 0
+    var batteryPercentage: Int = 0
+    var batteryStatus: String? = null
+    var chargingStatus: String? = null
+    var charging: Boolean = false
+    var lastChargedOn: String? = null
+    var lastKnownChargeLevel: Int = 0
+    var authenticated: Boolean = false
+    var connected: Boolean = false
+    var forceDisconnected: Boolean = false
+    var watchFaceList: MutableList<BuiltInWatchFace?>? = null
+    var currentWatchFace: BuiltInWatchFace? = null
 
-    public void updateBatteryInfo(HuamiBatteryInfo batteryInfo) {
-        if(batteryInfo!=null) {
-            this.batteryPercentage = batteryInfo.getLevelInPercent();
-            this.chargingStatus = batteryInfo.isCharging() ? "Charging" : "Not Charging";
-            this.batteryStatus = batteryInfo.getStateString();
-            this.charging = batteryInfo.isCharging();
+
+    fun updateBatteryInfo(batteryInfo: HuamiBatteryInfo?) {
+        if (batteryInfo != null) {
+            this.batteryPercentage = batteryInfo.getLevelInPercent()
+            this.chargingStatus = if (batteryInfo.isCharging()) "Charging" else "Not Charging"
+            this.batteryStatus = batteryInfo.getStateString()
+            this.charging = batteryInfo.isCharging()
         } else {
-            this.batteryStatus = "N/A";
-            this.batteryPercentage = 0;
-            this.chargingStatus = "N/A";
-            this.charging = false;
+            this.batteryStatus = "N/A"
+            this.batteryPercentage = 0
+            this.chargingStatus = "N/A"
+            this.charging = false
         }
     }
 
-    private String getNullSafeValue(String value) {
-        return null != value ? value : "";
+    private fun getNullSafeValue(value: String?): String {
+        return value ?: ""
     }
-
-
 }

@@ -1,5 +1,6 @@
 package com.vikas.gtr2e.utils;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
 import android.content.Context;
@@ -7,6 +8,9 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.util.Log;
+
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
 import com.vikas.gtr2e.GTR2eApp;
 import com.vikas.gtr2e.beans.DeviceInfo;
@@ -26,9 +30,12 @@ import lombok.Getter;
  */
 public class GTR2eManager {
     private static final String TAG = "GTR2eManager";
-
+    private final MutableLiveData<GTR2eBleService> serviceLiveData = new MutableLiveData<>();
+    public LiveData<GTR2eBleService> getServiceLiveData() {
+        return serviceLiveData;
+    }
     @Getter
-    private GTR2eBleService bleService;
+    public GTR2eBleService bleService;
     private ConnectionListener connectionListener;
 
     private boolean bound = false;
@@ -78,7 +85,8 @@ public class GTR2eManager {
             case "TEST":
 //                bleService.setCallStatus(GTR2eBleService.CALL_STATUS.INCOMING, "Hello World!");
 //                bleService.setTime();
-                bleService.requestWatchFaceIdList();
+//                bleService.requestWatchFaceIdList();
+                bleService.testNotifications("", "","");
             default:
                 break;
         }
@@ -162,11 +170,6 @@ public class GTR2eManager {
             }
 
             @Override
-            public void setMtu(int mtu) {
-
-            }
-
-            @Override
             public void onWatchFaceSet(boolean success) {
                 if (connectionListener != null) {
                     connectionListener.onWatchFaceSet(success);
@@ -193,6 +196,13 @@ public class GTR2eManager {
             public void onWatchFaceListReceived(List<Integer> watchFaceIds) {
                 if (connectionListener != null) {
                     connectionListener.onWatchFaceListReceived(watchFaceIds);
+                }
+            }
+
+            @Override
+            public void onCurrentWatchFace(int id) {
+                if (connectionListener != null) {
+                    connectionListener.onCurrentWatchFace(id);
                 }
             }
         });
@@ -241,15 +251,15 @@ public class GTR2eManager {
     }
 
     public boolean isConnected() {
-        if (bleService != null && bound && bleService.getDeviceInfo() != null) {
-            return bleService.getDeviceInfo().isConnected();
+        if (bleService != null && bound) {
+            return bleService.getDeviceInfo().getConnected();
         }
         return false;
     }
 
     public boolean isAuthenticated() {
-        if (bleService != null && bound && bleService.getDeviceInfo() != null) {
-            return bleService.getDeviceInfo().isAuthenticated();
+        if (bleService != null && bound) {
+            return bleService.getDeviceInfo().getAuthenticated();
         }
         return false;
     }
@@ -273,15 +283,11 @@ public class GTR2eManager {
             if (connectionListener != null) {
                 connectionListener.onBackgroundServiceBound(true);
                 DeviceInfo deviceInfo = bleService.getDeviceInfo();
-                if (deviceInfo != null) {
-                    connectionListener.onConnectedChanged(deviceInfo.isConnected());
-                    if (deviceInfo.isConnected()) {
-                        if (deviceInfo.isAuthenticated()) {
-                            connectionListener.onAuthenticated();
-                        }
+                connectionListener.onConnectedChanged(deviceInfo.getConnected());
+                if (deviceInfo.getConnected()) {
+                    if (deviceInfo.getAuthenticated()) {
+                        connectionListener.onAuthenticated();
                     }
-                } else {
-                    connectionListener.onConnectedChanged(false);
                 }
             }
         }
@@ -298,10 +304,12 @@ public class GTR2eManager {
         }
     };
 
-    public static synchronized GTR2eManager getInstance(Context context) {
+    public static synchronized GTR2eManager getInstance(Activity activity) {
         if (instance == null) {
-            instance = new GTR2eManager(context.getApplicationContext());
+            Log.e(TAG, "### CREATING NEW INSTANCE ###");
+            instance = new GTR2eManager(activity.getApplicationContext());
         } else {
+            Log.e(TAG, "--- USING EXISTING INSTANCE ---");
             if (!instance.bound && instance.bleService == null) {
                 Log.w(TAG, "GTR2eManager instance exists but not bound. Attempting to re-bind.");
                 instance.startAndBindService();

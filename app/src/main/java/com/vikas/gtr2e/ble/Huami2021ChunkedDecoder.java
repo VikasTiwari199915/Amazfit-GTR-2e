@@ -35,8 +35,8 @@ public class Huami2021ChunkedDecoder {
     private static final String TAG = "Huami2021ChunkedDecoder";
 
     // Keep track of last handle and count for acks
-    private byte lastHandle;
-    private byte lastCount;
+    public byte lastHandle;
+    public byte lastCount;
 
     private volatile byte[] sharedSessionKey;
 

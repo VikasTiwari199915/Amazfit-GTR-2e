@@ -46,6 +46,16 @@
                     tools:srcCompat="@drawable/gtr_bg" />
 
                 <ImageView
+                    android:id="@+id/watchFaceImage"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    app:layout_constraintBottom_toBottomOf="@+id/watchBatteryProgress"
+                    app:layout_constraintEnd_toEndOf="@+id/watchBatteryProgress"
+                    app:layout_constraintStart_toStartOf="@+id/watchBatteryProgress"
+                    app:layout_constraintTop_toTopOf="@+id/watchBatteryProgress"
+                    tools:src="@tools:sample/avatars" />
+
+                <ImageView
                     android:id="@+id/watchHeartRateIcon"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

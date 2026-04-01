@@ -1,614 +1,570 @@
-package com.vikas.gtr2e;
+package com.vikas.gtr2e
 
-import static android.app.Activity.RESULT_OK;
+import android.Manifest
+import android.animation.ObjectAnimator
+import android.app.Activity.RESULT_OK
+import android.app.AlertDialog
+import android.app.DownloadManager
+import android.app.NotificationManager
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
+import android.media.MediaPlayer
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.os.Environment
+import android.provider.Settings
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.core.net.toUri
+import androidx.fragment.app.Fragment
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.target.Target
+import com.vikas.gtr2e.beans.DeviceInfo
+import com.vikas.gtr2e.beans.HuamiBatteryInfo
+import com.vikas.gtr2e.databinding.FragmentHomeBinding
+import com.vikas.gtr2e.interfaces.ConnectionListener
+import com.vikas.gtr2e.utils.AppAutoUpdater
+import com.vikas.gtr2e.utils.GTR2eManager
+import com.vikas.gtr2e.utils.Prefs
+import java.io.File
+import java.util.Locale
 
-import android.Manifest;
-import android.animation.ObjectAnimator;
-import android.app.AlertDialog;
-import android.app.DownloadManager;
-import android.app.NotificationManager;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothManager;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.media.MediaPlayer;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Environment;
-import android.provider.Settings;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.animation.AccelerateDecelerateInterpolator;
-import android.widget.Toast;
+private const val TAG = "HOME_FRAG"
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
-import androidx.core.content.FileProvider;
-import androidx.fragment.app.Fragment;
+class HomeFragment : Fragment() {
 
-import com.vikas.gtr2e.beans.DeviceInfo;
-import com.vikas.gtr2e.beans.HuamiBatteryInfo;
-import com.vikas.gtr2e.databinding.FragmentHomeBinding;
-import com.vikas.gtr2e.interfaces.ConnectionListener;
-import com.vikas.gtr2e.utils.AppAutoUpdater;
-import com.vikas.gtr2e.utils.GTR2eManager;
-import com.vikas.gtr2e.utils.MediaUtil;
-import com.vikas.gtr2e.utils.Prefs;
+    private var _binding: FragmentHomeBinding? = null
+    private val binding get() = _binding!!
 
-import java.io.File;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
+    private var mediaPlayer: MediaPlayer? = null
 
-public class HomeFragment extends Fragment {
-    public static final String TAG = "HOME_FRAGMENT";
-    FragmentHomeBinding binding;
-    MediaPlayer mediaPlayer;
-    //Flags
-    boolean programmaticallyChangingHeartRateSwitch = false;
-    boolean isProgrammaticallyChangingLiftToWakeSwitch = false;
-    boolean isProgrammaticallyChangingKeepRunningInBackground = false;
-    boolean deviceAddedJustNow = false;
-    //Updates
-    Uri pendingInstallUri = null;
-    private BluetoothAdapter bluetoothAdapter;
-    private GTR2eManager gtr2eManager;
-    private String pendingVersionName;
+    // Flags
+    private var programmaticallyChangingHeartRateSwitch = false
+    private var isProgrammaticallyChangingLiftToWakeSwitch = false
+    private var isProgrammaticallyChangingKeepRunningInBackground = false
+    private var deviceAddedJustNow = false
 
-    private final ActivityResultLauncher<Intent> bluetoothLauncher =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-                if (result.getResultCode() == RESULT_OK) {
-                    connectToDevice();
-                } else {
-                    Toast.makeText(getContext(), "Bluetooth not enabled, cannot connect.", Toast.LENGTH_SHORT).show();
-                }
-            });
+    // Updates
+    private var pendingInstallUri: Uri? = null
+    private var pendingVersionName: String? = null
 
-    private final ActivityResultLauncher<String[]> requestPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
-                Log.e(TAG, "PERMISSION RESULT");
-                boolean allGranted = true;
-                for (Boolean granted : result.values()) {
-                    if (!granted) {
-                        allGranted = false;
-                        break;
-                    }
-                }
-                if (allGranted) {
-                    initBluetooth();
-                    initGTR2eManager();
-                }
-            });
+    private var bluetoothAdapter: BluetoothAdapter? = null
+    private var gtr2eManager: GTR2eManager? = null
 
-    private final ActivityResultLauncher<Intent> installPermissionLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == RESULT_OK) {
-                    installApk(pendingInstallUri, pendingVersionName);
-                    this.pendingVersionName = null;
-                }
-            });
-
-
-    public HomeFragment() {
-    }
-
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        binding = FragmentHomeBinding.inflate(inflater, container, false);
-        return binding.getRoot();
-    }
-
-
-
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        if (getActivity() != null && getActivity().getIntent() != null) {
-            deviceAddedJustNow = getActivity().getIntent().getBooleanExtra("DEVICE_ADDED_JUST_NOW", false);
+    // 🔥 Activity Result APIs
+    private val bluetoothLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (it.resultCode == RESULT_OK) connectToDevice()
+            else Toast.makeText(context, "Bluetooth not enabled", Toast.LENGTH_SHORT).show()
         }
 
-        initViews();
-        if (!MediaUtil.isNotificationListenerEnabled(requireContext())) {
-            Intent intent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
-            startActivity(intent);
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+            if (result.values.all { it }) {
+                initBluetooth()
+                initGTR2eManager()
+            }
         }
+
+    private val installPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (it.resultCode == RESULT_OK) {
+                installApk(pendingInstallUri, pendingVersionName);
+                this.pendingVersionName = null;
+            } else Toast.makeText(context, "App update install denied", Toast.LENGTH_SHORT).show()
+        }
+
+
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        _binding = FragmentHomeBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        deviceAddedJustNow = activity?.intent?.getBooleanExtra("DEVICE_ADDED_JUST_NOW", false) == true
+        initViews()
         if (checkPermissions()) {
-            initBluetooth();
-            initGTR2eManager();
+            initBluetooth()
+            initGTR2eManager()
         }
         if (Prefs.getAutoAppUpdatesEnabled(requireContext())) {
             AppAutoUpdater.checkForUpdates(requireContext(), this::showUpdateDialog);
         }
     }
 
-    private void initViews() {
-        binding.connectDeviceButton.setOnClickListener(v -> connectToDevice());
-        binding.connectDeviceButton.setOnLongClickListener(v -> {
-            startActivity(new Intent(requireContext(), ZeppLoginActivity.class));
-            return true;
-        });
-
-        binding.watchBatteryProgress.setProgress(0f);
-        binding.findWatchButton.setOnClickListener(v -> {
-            if (gtr2eManager != null) gtr2eManager.performAction("FIND_WATCH_START");
-        });
-        binding.continuousHeartRateSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+    private fun initViews() {
+        setFaceWatchIfNeeded(null)
+        binding.connectDeviceButton.setOnClickListener { connectToDevice() }
+        binding.watchBatteryProgress.progress = 0f
+        binding.findWatchButton.setOnClickListener {
+            gtr2eManager?.performAction("FIND_WATCH_START")
+        }
+        binding.continuousHeartRateSwitch.setOnCheckedChangeListener { _, isChecked ->
             if (programmaticallyChangingHeartRateSwitch) {
-                programmaticallyChangingHeartRateSwitch = false;
-                return;
+                programmaticallyChangingHeartRateSwitch = false
+                return@setOnCheckedChangeListener
             }
-            if (gtr2eManager == null) return;
-            if (isChecked) {
-                gtr2eManager.performAction("HEART_RATE_MONITORING_ON");
-                binding.batteryPercentLabel.setVisibility(View.INVISIBLE);
-            } else {
-                gtr2eManager.performAction("HEART_RATE_MONITORING_OFF");
-                binding.batteryPercentLabel.setVisibility(View.VISIBLE);
-                updateDeviceInfo();
-            }
-        });
-        binding.liftToWakeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            gtr2eManager?.performAction(if (isChecked) "HEART_RATE_MONITORING_ON" else "HEART_RATE_MONITORING_OFF")
+        }
+        binding.liftToWakeSwitch.setOnCheckedChangeListener { _, isChecked ->
             if (isProgrammaticallyChangingLiftToWakeSwitch) {
                 isProgrammaticallyChangingLiftToWakeSwitch = false;
-                return;
+                return@setOnCheckedChangeListener
             }
-            if (gtr2eManager == null) return;
-            if (isChecked) {
-                gtr2eManager.performAction("LIFT_WRIST_TO_WAKE_ON");
-            } else {
-                gtr2eManager.performAction("LIFT_WRIST_TO_WAKE_OFF");
-            }
-        });
-
+            gtr2eManager?.performAction(if (isChecked) "LIFT_WRIST_TO_WAKE_ON" else "LIFT_WRIST_TO_WAKE_OFF")
+        }
         isProgrammaticallyChangingKeepRunningInBackground = true;
         binding.keepRunningInBgSwitch.setChecked(Prefs.getKeepServiceRunningInBG(requireContext()));
         isProgrammaticallyChangingKeepRunningInBackground = false;
-        binding.keepRunningInBgSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+        binding.keepRunningInBgSwitch.setOnCheckedChangeListener { _, isChecked ->
             if (isProgrammaticallyChangingKeepRunningInBackground) {
                 isProgrammaticallyChangingKeepRunningInBackground = false;
-                return;
+                return@setOnCheckedChangeListener
             }
             Prefs.setKeepServiceRunningInBG(requireContext(), isChecked);
-        });
-    }
-
-
-
-    private void initBluetooth() {
-        BluetoothManager bluetoothManager = (BluetoothManager) requireContext().getSystemService(Context.BLUETOOTH_SERVICE);
-        if (bluetoothManager != null) {
-            bluetoothAdapter = bluetoothManager.getAdapter();
         }
     }
 
-    private void initGTR2eManager() {
-        gtr2eManager = GTR2eManager.getInstance(requireContext());
-        ConnectionListener connectionListener = new ConnectionListener() {
+    private fun setFaceWatchIfNeeded(deviceInfo: DeviceInfo?) {
+        if (deviceInfo == null) {
+            if (Prefs.getLastSelectedWatchFaceImageUrl(requireContext()) != null) {
+                Glide.with(requireContext())
+                    .load(Prefs.getLastSelectedWatchFaceImageUrl(requireContext()))
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .into(binding.watchFaceImage)
+                binding.batteryPercentLabel.visibility = View.INVISIBLE
+                binding.watchBatteryProgress.visibility = View.INVISIBLE
+            } else {
+                binding.watchFaceImage.visibility = View.GONE
+                binding.batteryPercentLabel.visibility = View.VISIBLE
+                binding.watchBatteryProgress.visibility = View.VISIBLE
+            }
+        } else {
+            if(deviceInfo.charging) {
+                binding.watchFaceImage.visibility = View.GONE
+                binding.batteryPercentLabel.visibility = View.VISIBLE
+                binding.watchBatteryProgress.visibility = View.VISIBLE
+            } else {
+                binding.watchFaceImage.visibility = View.VISIBLE
+                binding.batteryPercentLabel.visibility = View.INVISIBLE
+                binding.watchBatteryProgress.visibility = View.INVISIBLE
+            }
+        }
+    }
 
-            @Override
-            public void onBackgroundServiceBound(boolean bound) {
+    private fun initBluetooth() {
+        val manager = requireContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        bluetoothAdapter = manager.adapter
+    }
+
+    private fun initGTR2eManager() {
+        gtr2eManager = GTR2eManager.getInstance(requireActivity())
+        gtr2eManager?.setConnectionListener(object : ConnectionListener {
+
+            override fun onBackgroundServiceBound(bound: Boolean) {
                 if (bound) {
-                    if (gtr2eManager.isConnected()) {
-                        watchConnectionStatusChanged(true);
-                        if (gtr2eManager.isAuthenticated()) {
-                            watchAuthenticatedStatusChanged();
+                    activity?.runOnUiThread {
+                        _binding ?: return@runOnUiThread
+                        if (gtr2eManager!!.isConnected) {
+                            watchConnectionStatusChanged(true)
+                            if (gtr2eManager!!.isAuthenticated) {
+                                watchAuthenticatedStatusChanged()
+                            }
+                        } else {
+                            watchConnectionStatusChanged(false)
                         }
-                    } else {
-                        watchConnectionStatusChanged(false);
+                    }
+
+                    gtr2eManager!!.bleService.deviceInfoLiveData.observe(viewLifecycleOwner) { _ ->
+                        Log.e(TAG, "Device info change observed")
+                        activity?.runOnUiThread {
+                            _binding ?: return@runOnUiThread
+                            updateDeviceInfo()
+                        }
                     }
                 } else {
-                    watchConnectionStatusChanged(false);
-                    Log.e(TAG, "Background service not bound");
+                    activity?.runOnUiThread {
+                        _binding ?: return@runOnUiThread
+                        watchConnectionStatusChanged(false)
+                    }
+                    Log.e(TAG, "Background service not bound")
                 }
             }
 
-            @Override
-            public void onConnectedChanged(boolean connected) {
-                watchConnectionStatusChanged(connected);
-            }
-
-            @Override
-            public void onAuthenticated() {
-                watchAuthenticatedStatusChanged();
-            }
-
-            @Override
-            public void onBatteryInfoUpdated(HuamiBatteryInfo batteryInfo) {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> updateDeviceInfo());
+            override fun onConnectedChanged(connected: Boolean) {
+                activity?.runOnUiThread {
+                    _binding ?: return@runOnUiThread
+                    watchConnectionStatusChanged(connected)
                 }
             }
 
-            @Override
-            public void onError(String error) {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        binding.tvStatus.setText(MessageFormat.format("Error: {0}", error));
-                        Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
-                    });
+            override fun onAuthenticated() {
+                activity?.runOnUiThread {
+                    _binding ?: return@runOnUiThread
+                    watchAuthenticatedStatusChanged()
                 }
             }
 
-            @Override
-            public void onHeartRateChanged(int heartRate) {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> binding.watchHeartRateText.setText(MessageFormat.format("{0}", heartRate)));
+            override fun onBatteryInfoUpdated(batteryInfo: HuamiBatteryInfo?) {
+                if(activity != null) {
+//                    getActivity().runOnUiThread(() -> updateDeviceInfo());
                 }
             }
 
-            @Override
-            public void onHeartRateMonitoringChanged(boolean enabled) {
-                if (getActivity() != null) {
+            override fun onHeartRateChanged(heartRate: Int) {
+                activity?.runOnUiThread {
+                    _binding ?: return@runOnUiThread
+                    binding.watchHeartRateText.text = "$heartRate"
+                }
+            }
+
+            override fun onHeartRateMonitoringChanged(enabled: Boolean) {
+                activity?.runOnUiThread {
+                    _binding ?: return@runOnUiThread
                     if (enabled) {
-                        getActivity().runOnUiThread(() -> {
-                            binding.watchHeartRateIcon.setVisibility(View.VISIBLE);
-                            binding.watchHeartRateText.setVisibility(View.VISIBLE);
-                            programmaticallyChangingHeartRateSwitch = true;
-                            binding.continuousHeartRateSwitch.setChecked(true);
-                        });
+                        binding.watchHeartRateIcon.visibility = View.VISIBLE
+                        binding.watchHeartRateText.visibility = View.VISIBLE
+                        programmaticallyChangingHeartRateSwitch = true
+                        binding.continuousHeartRateSwitch.isChecked = true
                     } else {
-                        getActivity().runOnUiThread(() -> {
-                            binding.watchHeartRateIcon.setVisibility(View.INVISIBLE);
-                            binding.watchHeartRateText.setVisibility(View.INVISIBLE);
-                            programmaticallyChangingHeartRateSwitch = true;
-                            binding.continuousHeartRateSwitch.setChecked(false);
-                            binding.batteryPercentLabel.setVisibility(View.VISIBLE);
-                            updateDeviceInfo();
-                        });
+                        binding.watchHeartRateIcon.setVisibility(View.INVISIBLE)
+                        binding.watchHeartRateText.visibility = View.INVISIBLE
+                        programmaticallyChangingHeartRateSwitch = true
+                        binding.continuousHeartRateSwitch.isChecked = false
+                        binding.batteryPercentLabel.visibility = View.VISIBLE
                     }
                 }
             }
 
-            @Override
-            public void findPhoneStateChanged(boolean started) {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        if (started) {
-                            initFindPhoneTone();
-                            if (mediaPlayer != null) mediaPlayer.start();
-                            binding.blackBg.setImageResource(R.drawable.find_phone);
-                            binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
-                            binding.tvStatus.setText(R.string.finding_phone);
-                            binding.watchHeartRateIcon.setVisibility(View.INVISIBLE);
-                            binding.watchHeartRateText.setVisibility(View.INVISIBLE);
-                            binding.batteryPercentLabel.setVisibility(View.INVISIBLE);
-                            binding.watchBatteryProgress.setVisibility(View.INVISIBLE);
-                        } else {
-                            if (mediaPlayer != null) mediaPlayer.stop();
-                            binding.blackBg.setImageResource(R.drawable.gtr_bg);
-                            updateDeviceInfo();
-                        }
-                    });
+            override fun findPhoneStateChanged(started: Boolean) {
+                activity?.runOnUiThread {
+                    _binding ?: return@runOnUiThread
+                    if (started) {
+                        initFindPhoneTone()
+                        mediaPlayer?.start()
+                        binding.blackBg.setImageResource(R.drawable.find_phone)
+                        binding.chargingIndicatorImgView.visibility = View.INVISIBLE
+                        binding.tvStatus.setText(R.string.finding_phone)
+                        binding.watchHeartRateIcon.visibility = View.INVISIBLE
+                        binding.watchHeartRateText.visibility = View.INVISIBLE
+                        binding.batteryPercentLabel.visibility = View.INVISIBLE
+                        binding.watchBatteryProgress.visibility = View.INVISIBLE
+                    } else {
+                        mediaPlayer?.stop()
+                        binding.blackBg.setImageResource(R.drawable.gtr_bg)
+                        //updateDeviceInfo();
+                    }
                 }
             }
 
-            @Override
-            public void pendingBleProcessChanged(int count) {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        if (count > 0) {
-                            binding.pendingProcessLabel.setText(MessageFormat.format("{0}", count));
-                        } else {
-                            binding.pendingProcessLabel.setText("0");
-                        }
-                    });
+            override fun pendingBleProcessChanged(count: Int) {
+                activity?.runOnUiThread {
+                    _binding ?: return@runOnUiThread
+                    binding.pendingProcessLabel.text = count.toString()
                 }
             }
 
-            @Override
-            public void onDeviceInfoChanged(DeviceInfo deviceInfo) {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> updateDeviceInfo());
+            override fun onWatchFaceSet(success: Boolean) {
+                activity?.runOnUiThread {
+                    _binding ?: return@runOnUiThread
+                    Toast.makeText(
+                        context,
+                        if (success) "Watch face set successfully" else "Failed to set watch face",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
 
-            @Override
-            public void onWatchFaceSet(boolean success) {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        Toast.makeText(getContext(), success ? "Watch face set successfully" : "Failed to set watch face", Toast.LENGTH_SHORT).show();
-                    });
+            override fun onError(error: String?) {
+                activity?.runOnUiThread {
+                    _binding ?: return@runOnUiThread
+                    binding.tvStatus.text = "Error: $error"
+                    Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
                 }
             }
-
-
-        };
-        gtr2eManager.setConnectionListener(connectionListener);
-        gtr2eManager.onMainActivityResumed();
-        updateDeviceInfo();
-        if (deviceAddedJustNow) {
-            connectToDevice();
-            deviceAddedJustNow = false;
+        })
+        gtr2eManager!!.onMainActivityResumed()
+        updateDeviceInfo()
+        if (deviceAddedJustNow){
+            connectToDevice()
+            deviceAddedJustNow = false
         }
     }
 
-    private void watchAuthenticatedStatusChanged() {
-        if (gtr2eManager == null || gtr2eManager.getDeviceInfo() == null) {
-            Log.e(TAG, "DeviceInfo is null in onAuthenticated");
-            return;
-        }
-        if (getActivity() != null) {
-            getActivity().runOnUiThread(this::updateDeviceInfo);
-        }
-    }
-
-    private void watchConnectionStatusChanged(boolean connected) {
-        if (gtr2eManager == null || gtr2eManager.getDeviceInfo() == null) {
-            Log.e(TAG, "DeviceInfo is null in onConnectedChanged");
-            binding.tvStatus.setText(connected ? "Connected (No DeviceInfo)" : "Disconnected (No DeviceInfo)");
-            if (!connected) updateDeviceInfo();
-            return;
-        }
-        if (getActivity() != null) {
-            if (connected) {
-                getActivity().runOnUiThread(() -> {
-                    binding.tvStatus.setText(R.string.connected_to_gtr_2e);
-                    binding.connectDeviceButton.setIconResource(R.drawable.rounded_bluetooth_disabled_24);
-                    binding.connectDeviceButton.setText(R.string.disconnect);
-                });
-            } else {
-                Log.d(TAG, "onDisconnected() called in HomeFragment");
-                getActivity().runOnUiThread(() -> {
-                    binding.connectDeviceButton.setIconResource(R.drawable.rounded_bluetooth_connected_24);
-                    binding.connectDeviceButton.setText(R.string.connect);
-                    updateDeviceInfo();
-                });
-            }
-        }
-    }
-
-    private boolean checkPermissions() {
-        List<String> permissions = new ArrayList<>();
-
-        Collections.addAll(permissions,
-                Manifest.permission.BLUETOOTH,
-                Manifest.permission.BLUETOOTH_ADMIN,
-                Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.READ_PHONE_STATE,
-                Manifest.permission.READ_CONTACTS,
-                Manifest.permission.READ_CALL_LOG,
-                Manifest.permission.ACCESS_NOTIFICATION_POLICY
-        );
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissions.add(Manifest.permission.POST_NOTIFICATIONS);
-        }
-
-        List<String> missingPermissions = new ArrayList<>();
-        for (String permission : permissions) {
-            if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) {
-                missingPermissions.add(permission);
-            }
-        }
-
-        if (!missingPermissions.isEmpty()) {
-            requestPermissionLauncher.launch(missingPermissions.toArray(new String[0]));
-            return false;
-        }
-
-        requestNotificationPolicyAccess();
-        return true;
-    }
-
-    private void requestNotificationPolicyAccess() {
-        if (!isNotificationPolicyAccessGranted()) {
-            Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
-            startActivity(intent);
-        }
-    }
-
-    private void connectToDevice() {
-        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+    private fun connectToDevice() {
+        if (bluetoothAdapter?.isEnabled != true) {
             if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(getContext(), "Bluetooth permission not granted", Toast.LENGTH_SHORT).show();
-                return;
+                Toast.makeText(context, "Bluetooth permission not granted", Toast.LENGTH_SHORT).show()
+                return
             }
-            bluetoothLauncher.launch(enableBtIntent);
-            return;
+            bluetoothLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+            return
         }
 
-        if (gtr2eManager == null) {
-            Log.e(TAG, "gtr2eManager is null in connectToDevice");
-            return;
-        }
-
-        if (gtr2eManager.isConnected()) {
-            gtr2eManager.disconnect();
-            if (gtr2eManager.getDeviceInfo() != null) {
-                gtr2eManager.getDeviceInfo().setForceDisconnected(true);
-            }
-        } else {
-            binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_searching_24);
-            if (gtr2eManager.getDeviceInfo() != null) {
-                gtr2eManager.getDeviceInfo().setForceDisconnected(false);
-            }
-            gtr2eManager.startScan();
-        }
-    }
-
-    private void updateDeviceInfo() {
-        if (gtr2eManager == null) {
-            Log.w(TAG, "updateDeviceInfo called but gtr2eManager is null.");
-            // Set UI to a default disconnected state
-            binding.tvDeviceInfo.setText(R.string.no_device_connected_manager_is_null);
-            animateProgressBar(0f);
-            binding.batteryPercentLabel.setVisibility(View.INVISIBLE);
-            binding.batteryPercentLabel.setText("0%");
-            binding.tvStatus.setText(R.string.disconnected);
-            binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
-            binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_24);
-            binding.continuousHeartRateSwitch.setChecked(false);
-            binding.continuousHeartRateSwitch.setEnabled(false);
-            binding.findWatchButton.setEnabled(false);
-            binding.liftToWakeSwitch.setEnabled(false);
-            return;
-        }
-
-        DeviceInfo currentDeviceInfo = gtr2eManager.getDeviceInfo();
-
-        if (currentDeviceInfo != null && currentDeviceInfo.isConnected()) {
-            StringBuilder info = buildDeviceInfoString(currentDeviceInfo);
-            animateProgressBar(currentDeviceInfo.getBatteryPercentage());
-            binding.batteryPercentLabel.setText(MessageFormat.format("{0}%", currentDeviceInfo.getBatteryPercentage()));
-            binding.batteryPercentLabel.setVisibility(View.VISIBLE);
-            binding.tvDeviceInfo.setText(info.toString());
-            binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_connected_24);
-            if (currentDeviceInfo.isCharging()) {
-                binding.chargingIndicatorImgView.setVisibility(View.VISIBLE);
+        gtr2eManager?.let { it ->
+            if (it.isConnected) {
+                it.disconnect()
+                it.getDeviceInfo()?.let { it.forceDisconnected = true }
             } else {
-                binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
+                binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_searching_24);
+                it.getDeviceInfo()?.let { it.forceDisconnected = false }
+                it.startScan()
             }
-            binding.continuousHeartRateSwitch.setEnabled(true);
-            binding.findWatchButton.setEnabled(true);
-            binding.liftToWakeSwitch.setEnabled(true);
-            binding.stepsCountLabel.setText(String.format(Locale.ENGLISH, "%d", currentDeviceInfo.getSteps()));
+        }
+    }
+
+    private fun watchAuthenticatedStatusChanged() {
+        if (gtr2eManager == null || gtr2eManager!!.getDeviceInfo() == null) {
+            Log.e(TAG, "DeviceInfo is null in onAuthenticated")
+            return
+        }
+        if(activity != null) {
+//            getActivity().runOnUiThread(this::updateDeviceInfo);
+        }
+    }
+
+    private fun watchConnectionStatusChanged(connected: Boolean) {
+        if (gtr2eManager == null || gtr2eManager!!.deviceInfo == null) {
+            Log.e(TAG, "DeviceInfo is null in onConnectedChanged")
+            binding.tvStatus.text =
+                if (connected) "Connected (No DeviceInfo)" else "Disconnected (No DeviceInfo)"
+            return
+        }
+
+        activity?.let {
+            if (connected) {
+                binding.tvStatus.setText(R.string.connected_to_gtr_2e)
+                binding.connectDeviceButton.setIconResource(R.drawable.rounded_bluetooth_disabled_24)
+                binding.connectDeviceButton.setText(R.string.disconnect)
+            } else {
+                Log.d(TAG, "onDisconnected() called in HomeFragment")
+                binding.connectDeviceButton.setIconResource(R.drawable.rounded_bluetooth_connected_24)
+                binding.connectDeviceButton.setText(R.string.connect)
+            }
+        }
+    }
+
+    private fun updateDeviceInfo() {
+        val manager = gtr2eManager
+
+        if (manager == null) {
+            Log.w(TAG, "updateDeviceInfo called but gtr2eManager is null.")
+
+            binding.tvDeviceInfo.setText(R.string.no_device_connected_manager_is_null)
+            animateProgressBar(0f)
+            binding.batteryPercentLabel.visibility = View.INVISIBLE
+            binding.batteryPercentLabel.text = "0%"
+            binding.tvStatus.setText(R.string.disconnected)
+            binding.chargingIndicatorImgView.visibility = View.INVISIBLE
+            binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_24)
+            binding.continuousHeartRateSwitch.isChecked = false
+            binding.continuousHeartRateSwitch.isEnabled = false
+            binding.findWatchButton.isEnabled = false
+            binding.liftToWakeSwitch.isEnabled = false
+            setFaceWatchIfNeeded(null)
+            return
+        }
+
+        val deviceInfo = manager.deviceInfo
+
+        if (deviceInfo != null && deviceInfo.connected) {
+            val info = buildDeviceInfoString(deviceInfo)
+            animateProgressBar(deviceInfo.batteryPercentage.toFloat())
+            binding.batteryPercentLabel.text = "${deviceInfo.batteryPercentage}%"
+            binding.batteryPercentLabel.visibility = View.VISIBLE
+            binding.tvDeviceInfo.text = info
+            binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_connected_24)
+            binding.chargingIndicatorImgView.visibility = if (deviceInfo.charging) View.VISIBLE else View.INVISIBLE
+            binding.continuousHeartRateSwitch.isEnabled = true
+            binding.findWatchButton.isEnabled = true
+            binding.liftToWakeSwitch.isEnabled = true
+            binding.stepsCountLabel.text = String.format(Locale.ENGLISH, "%d", deviceInfo.steps)
         } else {
-            binding.tvDeviceInfo.setText(R.string.no_device_connected);
-            animateProgressBar(0f);
-            binding.batteryPercentLabel.setVisibility(View.INVISIBLE);
-            binding.batteryPercentLabel.setText("0%");
-            binding.tvStatus.setText(R.string.disconnected);
-            binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
-            binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_24);
-            binding.continuousHeartRateSwitch.setChecked(false);
-            binding.continuousHeartRateSwitch.setEnabled(false);
-            binding.findWatchButton.setEnabled(false);
-            binding.liftToWakeSwitch.setEnabled(false);
-            if (currentDeviceInfo == null) {
-                Log.w(TAG, "updateDeviceInfo: currentDeviceInfo is null, UI set to disconnected.");
-                binding.stepsCountLabel.setText("N/a");
+            binding.tvDeviceInfo.setText(R.string.no_device_connected)
+            animateProgressBar(0f)
+            binding.batteryPercentLabel.visibility = View.INVISIBLE
+            binding.batteryPercentLabel.text = "0%"
+            binding.tvStatus.setText(R.string.disconnected)
+            binding.chargingIndicatorImgView.visibility = View.INVISIBLE
+            binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_24)
+            binding.continuousHeartRateSwitch.isChecked = false
+            binding.continuousHeartRateSwitch.isEnabled = false
+            binding.findWatchButton.isEnabled = false
+            binding.liftToWakeSwitch.isEnabled = false
+            if (deviceInfo == null) {
+                Log.w(TAG, "updateDeviceInfo: currentDeviceInfo is null, UI set to disconnected.")
+                binding.stepsCountLabel.text = "N/a"
             }
         }
+        setFaceWatchIfNeeded(deviceInfo)
     }
 
-    @NonNull
-    private StringBuilder buildDeviceInfoString(DeviceInfo deviceInfoToDisplay) {
-        StringBuilder info = new StringBuilder();
-        if (deviceInfoToDisplay == null) {
-            info.append("Device information not available.");
-            return info;
-        }
-        if (deviceInfoToDisplay.getDeviceName() != null && !deviceInfoToDisplay.getDeviceName().isEmpty())
-            info.append("Device Name: ").append(deviceInfoToDisplay.getDeviceName()).append("\n");
-        if (deviceInfoToDisplay.getSerialNumber() != null && !deviceInfoToDisplay.getSerialNumber().isEmpty())
-            info.append("Serial Number: ").append(deviceInfoToDisplay.getSerialNumber()).append("\n");
-        if (deviceInfoToDisplay.getHardwareRevision() != null && !deviceInfoToDisplay.getHardwareRevision().isEmpty())
-            info.append("Hardware Revision: ").append(deviceInfoToDisplay.getHardwareRevision()).append("\n");
-        if (deviceInfoToDisplay.getSoftwareRevision() != null && !deviceInfoToDisplay.getSoftwareRevision().isEmpty())
-            info.append("Software Revision: ").append(deviceInfoToDisplay.getSoftwareRevision()).append("\n");
-        info.append("Battery: ").append(deviceInfoToDisplay.getBatteryPercentage()).append("%\n");
-        info.append("Charging: ").append(deviceInfoToDisplay.getChargingStatus()).append("\n");
-        info.append("Authenticated: ").append(deviceInfoToDisplay.isAuthenticated() ? "Yes" : "No");
-        return info;
-    }
-
-    private void animateProgressBar(float toProgress) {
-        ObjectAnimator animation = ObjectAnimator.ofFloat(binding.watchBatteryProgress, getString(R.string.progress), toProgress);
+    private fun animateProgressBar(toProgress: Float) {
+        val animation = ObjectAnimator.ofFloat(binding.watchBatteryProgress, getString(R.string.progress), toProgress);
         animation.setDuration(1000); // 1 second
-        animation.setInterpolator(new AccelerateDecelerateInterpolator());
+        animation.interpolator = AccelerateDecelerateInterpolator()
         animation.start();
     }
 
-    private void initFindPhoneTone() {
+    private fun buildDeviceInfoString(deviceInfo: DeviceInfo): String {
+        return buildString {
+            appendLine("Device: ${deviceInfo.deviceName}")
+            appendLine("Sl No: ${deviceInfo.serialNumber}")
+            appendLine("HW revision: ${deviceInfo.hardwareRevision}")
+            appendLine("SW revision: ${deviceInfo.softwareRevision}")
+            appendLine("Battery: ${deviceInfo.batteryPercentage}%")
+            appendLine("Charging: ${deviceInfo.chargingStatus}")
+            append("Authenticated: ${deviceInfo.authenticated}")
+        }
+    }
+
+    private fun initFindPhoneTone() {
         if (mediaPlayer != null) {
-            mediaPlayer.stop();
-            mediaPlayer.release();
+            mediaPlayer!!.stop();
+            mediaPlayer!!.release();
         }
         mediaPlayer = MediaPlayer.create(requireContext(), R.raw.findphone);
-        if (mediaPlayer != null) {
-            mediaPlayer.setLooping(true);
+        mediaPlayer?.isLooping = true
+    }
+
+    private fun checkPermissions(): Boolean {
+        val permissions = arrayListOf(
+            Manifest.permission.BLUETOOTH,
+            Manifest.permission.BLUETOOTH_ADMIN,
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.READ_CONTACTS,
+            Manifest.permission.READ_CALL_LOG,
+            Manifest.permission.ACCESS_NOTIFICATION_POLICY
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS);
+        }
+        val missing = permissions.filter {
+            ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
+        }
+        return if (missing.isNotEmpty()) {
+            requestPermissionLauncher.launch(missing.toTypedArray())
+            false
+        } else {
+            requestNotificationPolicyAccess();
+            true
         }
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (gtr2eManager != null) {
-            gtr2eManager.unbindServiceIfNeeded();
-        }
-        if (mediaPlayer != null) {
-            mediaPlayer.release();
-            mediaPlayer = null;
+    private fun requestNotificationPolicyAccess() {
+        if (!isNotificationPolicyAccessGranted()) {
+            val intent = Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+            startActivity(intent)
         }
     }
 
-    private boolean isNotificationPolicyAccessGranted() {
-        NotificationManager notificationManager = (NotificationManager) requireContext().getSystemService(Context.NOTIFICATION_SERVICE);
-        return notificationManager != null && notificationManager.isNotificationPolicyAccessGranted();
+    private fun isNotificationPolicyAccessGranted() : Boolean {
+        val notificationManager = context?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager?
+        return notificationManager?.isNotificationPolicyAccessGranted() == true
     }
 
-    private void showUpdateDialog(String currentVersion, String latestVersion, String downloadUrl) {
-        new AlertDialog.Builder(requireContext())
-                .setTitle("New Version Available")
-                .setMessage(String.format("Version %s is available.Current version is %s, Would you like to update now?", latestVersion, currentVersion))
-                .setPositiveButton("Update", (dialog, which) -> downloadAndInstallApk(downloadUrl, latestVersion))
-                .setNegativeButton("Later", null)
-                .setCancelable(false)
-                .show();
+    private fun showUpdateDialog(currentVersion: String, latestVersion: String, downloadUrl: String) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("New Version Available")
+            .setMessage(
+                String.format(
+                    "Version %s is available.Current version is %s, Would you like to update now?",
+                    latestVersion,
+                    currentVersion
+                )
+            )
+            .setPositiveButton(
+                "Update",
+                { _, _ -> downloadAndInstallApk(downloadUrl, latestVersion) })
+            .setNegativeButton("Later", null)
+            .setCancelable(false)
+            .show()
     }
 
-    private void downloadAndInstallApk(String apkUrl, String versionName) {
-        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(apkUrl));
+    private fun downloadAndInstallApk(apkUrl: String, versionName: String) {
+        val request = DownloadManager.Request(apkUrl.toUri());
         request.setTitle("App Update");
         request.setDescription("Downloading new version...");
         request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "gtr2e-" + versionName + ".apk");
+        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
+            "gtr2e-$versionName.apk"
+        );
+        val manager = requireContext().getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager;
+        val downloadId = manager.enqueue(request);
 
-        DownloadManager manager = (DownloadManager) requireContext().getSystemService(Context.DOWNLOAD_SERVICE);
-        if (manager == null) return;
-        long downloadId = manager.enqueue(request);
-
-        BroadcastReceiver onComplete = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
+        val onComplete = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
                 if (id == downloadId) {
-                    installApk(manager.getUriForDownloadedFile(downloadId), versionName);
-                    context.unregisterReceiver(this);
+                    installApk(manager.getUriForDownloadedFile(downloadId), versionName)
+                    context.unregisterReceiver(this)
                 }
             }
-        };
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requireContext().registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_EXPORTED);
+            requireContext().registerReceiver(onComplete,IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),Context.RECEIVER_EXPORTED)
         } else {
-            ContextCompat.registerReceiver(requireContext(), onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), ContextCompat.RECEIVER_EXPORTED);
+            ContextCompat.registerReceiver(requireContext(),onComplete,IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),ContextCompat.RECEIVER_EXPORTED)
         }
     }
 
-    private void installApk(Uri apkUri, String versionName) {
-        if (!requireContext().getPackageManager().canRequestPackageInstalls()) {
-            this.pendingInstallUri = apkUri;
-            this.pendingVersionName = versionName;
-            installPermissionLauncher.launch(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).setData(Uri.parse("package:" + requireContext().getPackageName())));
-            return;
+    private fun installApk(apkUri: Uri?, versionName: String?) {
+        if (!requireContext().packageManager.canRequestPackageInstalls()) {
+            pendingInstallUri = apkUri
+            pendingVersionName = versionName
+            val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                data = "package:${requireContext().packageName}".toUri()
+            }
+            installPermissionLauncher.launch(intent)
+            return
         }
-        String downloadedApkFilename = "gtr2e-" + versionName + ".apk";
-        File apkFileOnDisk = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), downloadedApkFilename);
-        if (!apkFileOnDisk.exists()) {
-            return;
-        }
-        apkUri = FileProvider.getUriForFile(
-                requireContext(),
-                requireContext().getPackageName() + ".fileProvider",
-                apkFileOnDisk);
 
-        Intent install = new Intent(Intent.ACTION_VIEW);
-        install.setDataAndType(apkUri, "application/vnd.android.package-archive");
-        install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        install.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(install);
+        val downloadedApkFilename = "gtr2e-$versionName.apk"
+        val apkFileOnDisk = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),downloadedApkFilename)
+
+        if (!apkFileOnDisk.exists()) return
+
+        val fileUri = FileProvider.getUriForFile(
+            requireContext(),
+            "${requireContext().packageName}.fileProvider",
+            apkFileOnDisk
+        )
+
+        val installIntent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(fileUri, "application/vnd.android.package-archive")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        startActivity(installIntent)
     }
 
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaPlayer?.release()
+        mediaPlayer = null
+    }
 }

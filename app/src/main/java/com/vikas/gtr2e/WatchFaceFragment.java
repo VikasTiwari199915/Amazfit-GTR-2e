@@ -13,8 +13,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 
-import com.vikas.gtr2e.beans.DeviceInfo;
-import com.vikas.gtr2e.beans.HuamiBatteryInfo;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.vikas.gtr2e.beans.ZeppCloudBeans.BuiltInWatchFace;
 import com.vikas.gtr2e.databinding.FragmentWatchFaceBinding;
 import com.vikas.gtr2e.interfaces.ConnectionListener;
@@ -25,8 +25,12 @@ import com.vikas.gtr2e.utils.GTR2eManager;
 import com.vikas.gtr2e.utils.Prefs;
 import com.vikas.gtr2e.utils.RetrofitClient;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import retrofit2.Call;
@@ -38,104 +42,77 @@ public class WatchFaceFragment extends Fragment {
     FragmentWatchFaceBinding binding;
     private GTR2eManager gtr2eManager;
     private WatchFaceAdapter adapter;
-    private final List<BuiltInWatchFace> watchFaceList = new ArrayList<>();
+    private List<BuiltInWatchFace> watchFaceList = new ArrayList<>();
     private boolean installedWatchFacesLoaded = false;
     private boolean fetchingWatchFaceDetails = false;
+    private boolean watchFaceListRequested = false;
 
     public WatchFaceFragment() {
     }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        Log.e(TAG, "onCreateView :: WatchFaceFragment");
         binding = FragmentWatchFaceBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        Log.e(TAG, "onViewCreated :: WatchFaceFragment");
+        watchFaceListRequested = false;
         initRecyclerView();
         initGTR2eManager();
     }
 
     private void initRecyclerView() {
-        adapter = new WatchFaceAdapter(watchFaceList, watchFace -> {
-            // Clicking on an item will call a function implemented later
-            onWatchFaceSelected(watchFace);
-        });
+        // Clicking on an item will call a function implemented later
+        watchFaceList = loadWatchFaces();
+        adapter = new WatchFaceAdapter(watchFaceList, this::onWatchFaceSelected);
         binding.watchFaceRecyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3));
         binding.watchFaceRecyclerView.setAdapter(adapter);
+        int lastSelectedWatchFaceId = Prefs.getLastSelectedWatchFace(requireContext());
+        if(lastSelectedWatchFaceId != -1) {
+            binding.watchFaceRecyclerView.post(() -> adapter.setSelectedWatchFaceId(requireContext(), lastSelectedWatchFaceId));
+        }
     }
 
     private void initGTR2eManager() {
-        gtr2eManager = GTR2eManager.getInstance(requireContext());
+        gtr2eManager = GTR2eManager.getInstance(requireActivity());
         gtr2eManager.setConnectionListener(new ConnectionListener() {
-            @Override
-            public void onBackgroundServiceBound(boolean bound) {
-                if (bound && gtr2eManager.isAuthenticated()) {
-                    fetchWatchFaceListFromDevice();
-                }
-            }
-
-            @Override
-            public void onConnectedChanged(boolean connected) {
-            }
-
-            @Override
-            public void onAuthenticated() {
-                fetchWatchFaceListFromDevice();
-            }
-
-            @Override
-            public void onBatteryInfoUpdated(HuamiBatteryInfo batteryInfo) {
-            }
-
-            @Override
-            public void onError(String error) {
-                Log.e(TAG, "Error: " + error);
-            }
-
-            @Override
-            public void onHeartRateChanged(int heartRate) {
-            }
-
-            @Override
-            public void onHeartRateMonitoringChanged(boolean enabled) {
-            }
-
-            @Override
-            public void findPhoneStateChanged(boolean started) {
-            }
 
             @Override
             public void pendingBleProcessChanged(int count) {
-            }
-
-            @Override
-            public void onDeviceInfoChanged(DeviceInfo deviceInfo) {
-            }
-
-            @Override
-            public void onWatchFaceSet(boolean success) {
+                if(!watchFaceListRequested && gtr2eManager.isConnected() && gtr2eManager.isAuthenticated() && count == 0) {
+                    watchFaceListRequested = true;
+                    requireActivity().runOnUiThread(()->fetchWatchFaceListFromDevice());
+                }
             }
 
             @Override
             public void onWatchFaceListReceived(List<Integer> watchFaceIds) {
-                if (getActivity() != null && !fetchingWatchFaceDetails) {
+                if (!fetchingWatchFaceDetails) {
                     fetchingWatchFaceDetails = true;
-                    getActivity().runOnUiThread(() -> fetchWatchFaceDetails(watchFaceIds));
+                    requireActivity().runOnUiThread(() -> fetchWatchFaceDetails(watchFaceIds));
                 }
+            }
+
+            @Override
+            public void onCurrentWatchFace(int id) {
+                binding.watchFaceRecyclerView.post(() -> adapter.setSelectedWatchFaceId(requireContext(), id));
             }
         });
 
-        if (gtr2eManager.isAuthenticated()) {
+        if (!watchFaceListRequested && gtr2eManager.isConnected() && gtr2eManager.isAuthenticated()) {
+            watchFaceListRequested = true;
             fetchWatchFaceListFromDevice();
         }
     }
 
     private void fetchWatchFaceListFromDevice() {
-        if(installedWatchFacesLoaded) return;
+        if(installedWatchFacesLoaded || fetchingWatchFaceDetails) return;
         // Show progress bar while fetching)
-        binding.progressBar.setVisibility(View.VISIBLE);
+        requireActivity().runOnUiThread(() -> binding.progressBar.setVisibility(View.VISIBLE));
         gtr2eManager.performAction("REQUEST_WATCHFACE_LIST");
     }
 
@@ -158,9 +135,37 @@ public class WatchFaceFragment extends Fragment {
                         binding.progressBar.setVisibility(View.GONE);
                         if (response.isSuccessful() && response.body() != null) {
                             watchFaceList.clear();
-                            watchFaceList.addAll(response.body());
+                            List<BuiltInWatchFace> installedWatchFaces = new ArrayList<>();
+
+                            // Create map from API response for fast lookup
+                            Map<Integer, BuiltInWatchFace> apiMap = new HashMap<>();
+                            for (BuiltInWatchFace face : response.body()) {
+                                apiMap.put(face.getBuiltin_id(), face);
+                            }
+
+                            // Preserve order from device (watchFaceIds)
+                            for (Integer id : watchFaceIds) {
+                                BuiltInWatchFace face = apiMap.get(id);
+
+                                if (face != null) {
+                                    installedWatchFaces.add(face);
+                                } else {
+                                    // Create placeholder
+                                    BuiltInWatchFace placeholder = new BuiltInWatchFace();
+                                    placeholder.setBuiltin_id(id);
+                                    placeholder.setName("Unknown");
+                                    installedWatchFaces.add(placeholder);
+                                }
+                            }
+
+                            // Update UI list
+                            watchFaceList.clear();
+                            watchFaceList.addAll(installedWatchFaces);
+                            saveWatchFaces(installedWatchFaces);
                             adapter.notifyDataSetChanged();
                             installedWatchFacesLoaded = true;
+
+                            gtr2eManager.performAction("TEST");
 
                             // For now, let's assume the first one is selected or we can get currently selected ID if available
                             // Implementation for selected indicator can be refined later
@@ -197,12 +202,29 @@ public class WatchFaceFragment extends Fragment {
                 });
     }
 
-    private void onWatchFaceSelected(BuiltInWatchFace watchFace) {
+    private void onWatchFaceSelected(BuiltInWatchFace watchFace, int position) {
         // Function to be implemented later by the user
         Toast.makeText(getContext(), "Selected: " + watchFace.getName(), Toast.LENGTH_SHORT).show();
-        adapter.setSelectedWatchFaceId(watchFace.getBuiltin_id());
+        adapter.setSelectedWatchFaceId(requireContext(), watchFace.getBuiltin_id());
         Log.e(TAG, "Selected: " + watchFace.getBuiltin_id());
         gtr2eManager.performAction("SET_CURRENT_WATCHFACE_ID", String.valueOf(watchFace.getBuiltin_id()));
+    }
+
+    public void saveWatchFaces(List<BuiltInWatchFace> list) {
+        String json = new Gson().toJson(list);
+        Prefs.saveWatchFaces(requireContext(), json);
+    }
+
+    public List<BuiltInWatchFace> loadWatchFaces() {
+        try {
+            String json = Prefs.loadWatchFaces(requireContext());
+            if (json == null) return new ArrayList<>();
+            Type type = new TypeToken<List<BuiltInWatchFace>>() {}.getType();
+            return new Gson().fromJson(json, type);
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading watch faces: " + e.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     @Override

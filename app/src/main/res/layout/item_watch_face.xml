@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/cardView"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -19,12 +20,13 @@
             android:id="@+id/imagePreview"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:scaleType="centerInside"
             android:contentDescription="@string/watch_face_preview"
+            android:scaleType="fitCenter"
             app:layout_constraintDimensionRatio="1:1"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            tools:srcCompat="@tools:sample/avatars" />
 
         <TextView
             android:id="@+id/watchFaceName"
@@ -36,17 +38,30 @@
             android:textAppearance="?attr/textAppearanceBodyMedium"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/imagePreview" />
+            app:layout_constraintTop_toBottomOf="@id/imagePreview"
+            tools:text="Test watchface" />
 
         <ImageView
             android:id="@+id/selectedIndicator"
             android:layout_width="24dp"
             android:layout_height="24dp"
+            android:contentDescription="@string/selected"
             android:src="@drawable/rounded_check_24"
             android:visibility="gone"
-            android:contentDescription="@string/selected"
             app:layout_constraintEnd_toEndOf="@id/imagePreview"
             app:layout_constraintTop_toTopOf="@id/imagePreview"
+            app:tint="?attr/colorPrimary"
+            tools:visibility="visible" />
+
+        <ImageView
+            android:id="@+id/thirdPartyIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:foregroundTint="#DE4F4F"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/imagePreview"
+            app:layout_constraintStart_toStartOf="parent"
+            app:srcCompat="@drawable/rounded_box_24"
             app:tint="?attr/colorPrimary" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

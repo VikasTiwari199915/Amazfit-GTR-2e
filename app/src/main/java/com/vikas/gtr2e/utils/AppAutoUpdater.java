@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import com.vikas.gtr2e.apiInterfaces.GitHubApiService;
 import com.vikas.gtr2e.beans.github.GithubRelease;
 import com.vikas.gtr2e.beans.github.ReleaseAssets;
+import com.vikas.gtr2e.interfaces.AppUpdateListener;
 
 import java.util.List;
 import java.util.Objects;
@@ -25,10 +26,6 @@ import retrofit2.Response;
 public class AppAutoUpdater {
 
     private static final String TAG = "AppAutoUpdater";
-
-    public interface AppUpdateListener {
-        void onUpdateAvailable(String currentVersion, String latestVersion, String updateUrl);
-    }
 
     public static void checkForUpdates(Context context, AppUpdateListener listener) {
         GitHubApiService apiService = RetrofitClient.getGithubApiService(context);

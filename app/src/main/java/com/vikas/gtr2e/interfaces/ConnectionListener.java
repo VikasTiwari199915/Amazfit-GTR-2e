@@ -10,16 +10,17 @@ import java.util.List;
  * @author Vikas Tiwari
  */
 public interface ConnectionListener {
-    void onBackgroundServiceBound(boolean bound);
-    void onConnectedChanged(boolean connected);
-    void onAuthenticated();
-    void onBatteryInfoUpdated(HuamiBatteryInfo batteryInfo);
-    void onError(String error);
-    void onHeartRateChanged(int heartRate);
-    void onHeartRateMonitoringChanged(boolean enabled);
-    void findPhoneStateChanged(boolean started);
-    void pendingBleProcessChanged(int count);
-    void onDeviceInfoChanged(DeviceInfo deviceInfo);
-    void onWatchFaceSet(boolean success);
+    default void onBackgroundServiceBound(boolean bound) {}
+    default void onConnectedChanged(boolean connected) {}
+    default void onAuthenticated() {}
+    default void onBatteryInfoUpdated(HuamiBatteryInfo batteryInfo) {}
+    default void onError(String error) {}
+    default void onHeartRateChanged(int heartRate) {}
+    default void onHeartRateMonitoringChanged(boolean enabled) {}
+    default void findPhoneStateChanged(boolean started) {}
+    default void pendingBleProcessChanged(int count) {}
+    default void onDeviceInfoChanged(DeviceInfo deviceInfo) {}
+    default void onWatchFaceSet(boolean success) {}
     default void onWatchFaceListReceived(List<Integer> watchFaceIds) {}
+    default void onCurrentWatchFace(int id){}
 }

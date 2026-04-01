@@ -67,4 +67,19 @@ public class GTR2eWatchFaceUtil {
         }
         return ids;
     }
+
+    public static byte[] getCurrentWatchFace() {
+        return new byte[]{ (byte) 0xFE, 0x00, 0x01 };
+    }
+
+    public static int parseCurrentWatchFaceId(byte[] value) {
+        if (value == null || value.length < 7) return -1;
+        // success check
+        if (value[4] != 1) return -1;
+
+        int lsb = value[5] & 0xFF;
+        int msb = value[6] & 0xFF;
+
+        return (msb << 8) | lsb;
+    }
 }
