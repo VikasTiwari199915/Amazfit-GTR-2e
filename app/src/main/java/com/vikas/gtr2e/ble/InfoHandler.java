@@ -3,8 +3,6 @@ package com.vikas.gtr2e.ble;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.util.Log;
 
-import androidx.lifecycle.MutableLiveData;
-
 import com.vikas.gtr2e.beans.DeviceInfo;
 import com.vikas.gtr2e.beans.HuamiBatteryInfo;
 import com.vikas.gtr2e.enums.MusicControl;
@@ -30,7 +28,7 @@ public class InfoHandler {
 
     public static void onInfoReceived(BluetoothGattCharacteristic characteristic, byte[] value,
                                       ConnectionCallback connectionCallback, GTR2eBleService bleService,
-                                      DeviceInfo deviceInfo, MutableLiveData<DeviceInfo> deviceInfoLiveData) {
+                                      DeviceInfo deviceInfo) {
         final UUID characteristicUUID = characteristic.getUuid();
 
         if (HuamiService.UUID_CHARACTERISTIC_6_BATTERY_INFO.equals(characteristicUUID)) {
@@ -38,20 +36,17 @@ public class InfoHandler {
             HuamiBatteryInfo batteryInfo = HuamiBatteryInfo.parseBatteryResponse(value);
             if (batteryInfo != null) {
                 deviceInfo.updateBatteryInfo(batteryInfo);
-                deviceInfoLiveData.postValue(deviceInfo);
                 if (connectionCallback != null)
                     connectionCallback.onBatteryDataReceived(batteryInfo);
             }
         } else if (HuamiService.UUID_CHARACTERISTIC_REALTIME_STEPS.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING REALTIME STEPS INFO");
             handleRealtimeSteps(value, deviceInfo, connectionCallback);
-            deviceInfoLiveData.postValue(deviceInfo);
         } else if (HuamiService.UUID_CHARACTERISTIC_HEART_RATE_MEASUREMENT.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING HEART RATE INFO :: " + Arrays.toString(value));
             if (value.length > 1 && value[0] == 0 && value[1] != 0) { // Valid HR reading
                 int heartRate = value[1] & 0xFF; // Treat as unsigned byte
                 deviceInfo.setHeartRate(heartRate);
-                deviceInfoLiveData.postValue(deviceInfo);
                 if (connectionCallback != null) {
                     connectionCallback.onHeartRateMonitoringChanged(true); // Assuming this implies monitoring is on
                     connectionCallback.onHeartRateChanged(heartRate);
@@ -68,7 +63,6 @@ public class InfoHandler {
         } else if (HuamiService.UUID_CHARACTERISTIC_DEVICEEVENT.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING DEVICE EVENT INFO :: " + Arrays.toString(value));
             handleDeviceEvent(value, connectionCallback, bleService, deviceInfo);
-            deviceInfoLiveData.postValue(deviceInfo);
             // onOperationComplete is typically called by specific event handlers if needed or at end of this block
         } else if (HuamiService.UUID_CHARACTERISTIC_WORKOUT.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING WORKOUT INFO :: " + Arrays.toString(value));
@@ -76,7 +70,6 @@ public class InfoHandler {
         } else if (HuamiService.UUID_CHARACTERISTIC_7_REALTIME_STEPS.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING 7CHARACTERISTIC REALTIME STEPS INFO");
             handleRealtimeSteps(value, deviceInfo, connectionCallback);
-            deviceInfoLiveData.postValue(deviceInfo);
         } else if (HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING CONFIGURATION INFO :: " + Arrays.toString(value));
             handleConfigurationInfo(value, connectionCallback);
@@ -101,7 +94,6 @@ public class InfoHandler {
                         new String(value, StandardCharsets.UTF_8), Arrays.toString(value)
                 ));
                 handleDeviceInfo(value,BleNamesResolver.resolveCharacteristicName(characteristicUUID.toString()), connectionCallback, bleService, deviceInfo);
-                deviceInfoLiveData.postValue(deviceInfo);
             }
         }
     }

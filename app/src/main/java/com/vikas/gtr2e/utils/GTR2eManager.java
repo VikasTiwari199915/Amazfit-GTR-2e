@@ -252,14 +252,14 @@ public class GTR2eManager {
 
     public boolean isConnected() {
         if (bleService != null && bound) {
-            return bleService.getDeviceInfo().getConnected();
+            return bleService.getDeviceInfo().isConnected();
         }
         return false;
     }
 
     public boolean isAuthenticated() {
         if (bleService != null && bound) {
-            return bleService.getDeviceInfo().getAuthenticated();
+            return bleService.getDeviceInfo().isAuthenticated();
         }
         return false;
     }
@@ -283,9 +283,9 @@ public class GTR2eManager {
             if (connectionListener != null) {
                 connectionListener.onBackgroundServiceBound(true);
                 DeviceInfo deviceInfo = bleService.getDeviceInfo();
-                connectionListener.onConnectedChanged(deviceInfo.getConnected());
-                if (deviceInfo.getConnected()) {
-                    if (deviceInfo.getAuthenticated()) {
+                connectionListener.onConnectedChanged(deviceInfo.isConnected());
+                if (deviceInfo.isConnected()) {
+                    if (deviceInfo.isAuthenticated()) {
                         connectionListener.onAuthenticated();
                     }
                 }

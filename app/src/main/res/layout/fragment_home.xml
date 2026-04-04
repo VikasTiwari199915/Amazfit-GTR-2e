@@ -29,116 +29,128 @@
             android:orientation="vertical">
 
             <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="300dp"
-                android:layout_height="300dp">
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
-                <ImageView
-                    android:id="@+id/blackBg"
-                    android:layout_width="0dp"
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/constraintLayout"
+                    android:layout_width="230dp"
+                    android:layout_height="300dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/constraintLayout2"
+                    app:layout_constraintHorizontal_bias="0.55"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <ImageView
+                        android:id="@+id/watchFaceImage"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        app:layout_constraintBottom_toBottomOf="@+id/watchBatteryProgress"
+                        app:layout_constraintEnd_toEndOf="@+id/watchBatteryProgress"
+                        app:layout_constraintStart_toStartOf="@+id/watchBatteryProgress"
+                        app:layout_constraintTop_toTopOf="@+id/watchBatteryProgress"
+                        tools:src="@tools:sample/avatars" />
+
+                    <ImageView
+                        android:id="@+id/watchHeartRateIcon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:visibility="invisible"
+                        app:layout_constraintBottom_toBottomOf="@+id/watchHeartRateText"
+                        app:layout_constraintEnd_toStartOf="@+id/watchHeartRateText"
+                        app:layout_constraintTop_toTopOf="@+id/watchHeartRateText"
+                        app:srcCompat="@drawable/rounded_ecg_heart_24"
+                        app:tint="#C80B0B"
+                        tools:visibility="visible" />
+
+                    <TextView
+                        android:id="@+id/watchHeartRateText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="24dp"
+                        android:text="0"
+                        android:textColor="#F6F6F6"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:visibility="invisible"
+                        app:layout_constraintBottom_toBottomOf="@+id/watchBatteryProgress"
+                        app:layout_constraintEnd_toEndOf="@+id/watchBatteryProgress"
+                        app:layout_constraintStart_toStartOf="@+id/watchBatteryProgress"
+                        app:layout_constraintTop_toTopOf="@+id/watchBatteryProgress"
+                        tools:visibility="visible" />
+
+                    <com.mikhaellopez.circularprogressbar.CircularProgressBar
+                        android:id="@+id/watchBatteryProgress"
+                        android:layout_width="146dp"
+                        android:layout_height="wrap_content"
+                        android:visibility="invisible"
+                        app:cpb_background_progressbar_color="@android:color/transparent"
+                        app:cpb_progress="80"
+                        app:cpb_progress_max="100"
+                        app:cpb_progressbar_color="#12FA89"
+                        app:cpb_progressbar_width="5dp"
+                        app:cpb_round_border="true"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        tools:visibility="invisible" />
+
+                    <ImageView
+                        android:id="@+id/chargingIndicatorImgView"
+                        android:layout_width="10dp"
+                        android:layout_height="0dp"
+                        android:paddingTop="2dp"
+                        android:visibility="invisible"
+                        app:layout_constraintBottom_toBottomOf="@+id/batteryPercentLabel"
+                        app:layout_constraintEnd_toStartOf="@+id/batteryPercentLabel"
+                        app:layout_constraintTop_toTopOf="@+id/batteryPercentLabel"
+                        app:srcCompat="@drawable/round_bolt_24"
+                        app:tint="#12FA89"
+                        tools:ignore="ContentDescription"
+                        tools:visibility="visible" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/batteryPercentLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="24dp"
+                        android:fontFamily="sans-serif"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                        android:textColor="#1BBF20"
+                        android:textSize="11sp"
+                        app:layout_constraintBottom_toBottomOf="@+id/watchBatteryProgress"
+                        app:layout_constraintEnd_toEndOf="@+id/watchBatteryProgress"
+                        app:layout_constraintStart_toStartOf="@+id/watchBatteryProgress"
+                        tools:text="100%" />
+
+                    <ImageView
+                        android:id="@+id/deviceBezel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#00F4F4F4"
+                        android:scaleType="fitCenter"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:srcCompat="@drawable/gtr2e"
+                        tools:ignore="ContentDescription" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/constraintLayout2"
+                    android:layout_width="150dp"
                     android:layout_height="0dp"
-                    android:background="@android:color/transparent"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:srcCompat="@drawable/gtr_bg"
-                    tools:ignore="ContentDescription"
-                    tools:srcCompat="@drawable/gtr_bg" />
+                    app:layout_constraintStart_toEndOf="@+id/constraintLayout"
+                    app:layout_constraintTop_toTopOf="parent">
 
-                <ImageView
-                    android:id="@+id/watchFaceImage"
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    app:layout_constraintBottom_toBottomOf="@+id/watchBatteryProgress"
-                    app:layout_constraintEnd_toEndOf="@+id/watchBatteryProgress"
-                    app:layout_constraintStart_toStartOf="@+id/watchBatteryProgress"
-                    app:layout_constraintTop_toTopOf="@+id/watchBatteryProgress"
-                    tools:src="@tools:sample/avatars" />
-
-                <ImageView
-                    android:id="@+id/watchHeartRateIcon"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    android:visibility="invisible"
-                    app:layout_constraintBottom_toBottomOf="@+id/watchHeartRateText"
-                    app:layout_constraintEnd_toStartOf="@+id/watchHeartRateText"
-                    app:layout_constraintTop_toTopOf="@+id/watchHeartRateText"
-                    app:srcCompat="@drawable/rounded_ecg_heart_24"
-                    app:tint="#C80B0B"
-                    tools:visibility="visible" />
-
-                <TextView
-                    android:id="@+id/watchHeartRateText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="24dp"
-                    android:text="0"
-                    android:textColor="#F6F6F6"
-                    android:textSize="24sp"
-                    android:textStyle="bold"
-                    android:visibility="invisible"
-                    app:layout_constraintBottom_toBottomOf="@+id/watchBatteryProgress"
-                    app:layout_constraintEnd_toEndOf="@+id/watchBatteryProgress"
-                    app:layout_constraintStart_toStartOf="@+id/watchBatteryProgress"
-                    app:layout_constraintTop_toTopOf="@+id/watchBatteryProgress"
-                    tools:visibility="visible" />
-
-                <com.mikhaellopez.circularprogressbar.CircularProgressBar
-                    android:id="@+id/watchBatteryProgress"
-                    android:layout_width="146dp"
-                    android:layout_height="wrap_content"
-                    app:cpb_background_progressbar_color="@android:color/transparent"
-                    app:cpb_progress="80"
-                    app:cpb_progress_max="100"
-                    app:cpb_progressbar_color="#12FA89"
-                    app:cpb_progressbar_width="5dp"
-                    app:cpb_round_border="true"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-
-                <ImageView
-                    android:id="@+id/chargingIndicatorImgView"
-                    android:layout_width="10dp"
-                    android:layout_height="0dp"
-                    android:paddingTop="2dp"
-                    android:visibility="invisible"
-                    app:layout_constraintBottom_toBottomOf="@+id/batteryPercentLabel"
-                    app:layout_constraintEnd_toStartOf="@+id/batteryPercentLabel"
-                    app:layout_constraintTop_toTopOf="@+id/batteryPercentLabel"
-                    app:srcCompat="@drawable/round_bolt_24"
-                    app:tint="#12FA89"
-                    tools:ignore="ContentDescription"
-                    tools:visibility="visible" />
-
-                <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/batteryPercentLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="24dp"
-                    android:fontFamily="sans-serif"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                    android:textColor="#1BBF20"
-                    android:textSize="11sp"
-                    app:layout_constraintBottom_toBottomOf="@+id/watchBatteryProgress"
-                    app:layout_constraintEnd_toEndOf="@+id/watchBatteryProgress"
-                    app:layout_constraintStart_toStartOf="@+id/watchBatteryProgress"
-                    tools:text="100%" />
-
-                <ImageView
-                    android:id="@+id/deviceBezel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="#00F4F4F4"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:srcCompat="@drawable/gtr2e"
-                    tools:ignore="ContentDescription" />
-
+                </androidx.constraintlayout.widget.ConstraintLayout>
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <com.google.android.material.card.MaterialCardView
