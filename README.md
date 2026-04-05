@@ -6,6 +6,14 @@ A privacy-focused, open-source Android companion app for the Amazfit GTR 2e smar
 
 GTR 2e Companion provides a robust alternative to official applications for managing the Amazfit GTR 2e. By implementing the Huami Bluetooth Low Energy (BLE) protocol, the app offers core synchronization and control features with a commitment to simplicity, performance, and user privacy.
 
+## 📸 Screenshots
+
+<p align="center">
+  <img src="docs/images/Screenshot_home.jpg" width="250" alt="home screen"/>
+  <img src="docs/images/Screenshot_settings.jpg" width="250" alt="Settings screen"/>
+  <img src="docs/images/Screenshot_watchfaces.jpg" width="250" alt="WatchFaces screen"/>
+</p>
+
 ## Key Features
 
 - **Automated Authentication**: Optional Zepp account login is used to securely retrieve your device-specific `authKey` during initial setup, eliminating the need for manual token extraction tools.

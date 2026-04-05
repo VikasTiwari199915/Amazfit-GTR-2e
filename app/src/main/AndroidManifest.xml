@@ -57,9 +57,13 @@
         <activity
             android:name=".HomeActivity"
             android:theme="@style/Theme.GTR2eApp"
+            android:configChanges="orientation"
+            android:screenOrientation="portrait"
             android:exported="false" />
         <activity
             android:name=".ZeppLoginActivity"
+            android:configChanges="orientation"
+            android:screenOrientation="portrait"
             android:exported="true"
             android:theme="@style/Theme.GTR2eApp">
             <intent-filter>
@@ -70,6 +74,8 @@
         </activity>
         <activity
             android:name=".BluetoothScanActivity"
+            android:configChanges="orientation"
+            android:screenOrientation="portrait"
             android:exported="false"
             android:theme="@style/Theme.GTR2eApp" />
 

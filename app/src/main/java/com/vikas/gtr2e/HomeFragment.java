@@ -146,7 +146,7 @@ public class HomeFragment extends Fragment {
             return true;
         });
 
-        binding.watchBatteryProgress.setProgress(0f);
+        binding.sideBatteryProgressBar.setProgress(0);
         binding.findWatchButton.setOnClickListener(v -> {
             if (gtr2eManager != null) gtr2eManager.performAction("FIND_WATCH_START");
         });
@@ -290,7 +290,6 @@ public class HomeFragment extends Fragment {
                             binding.watchHeartRateIcon.setVisibility(View.INVISIBLE);
                             binding.watchHeartRateText.setVisibility(View.INVISIBLE);
                             binding.batteryPercentLabel.setVisibility(View.INVISIBLE);
-                            binding.watchBatteryProgress.setVisibility(View.INVISIBLE);
                         } else {
                             if (mediaPlayer != null) mediaPlayer.stop();
 //                            binding.blackBg.setImageResource(R.drawable.gtr_bg);
@@ -451,8 +450,7 @@ public class HomeFragment extends Fragment {
             Log.w(TAG, "updateDeviceInfo called but gtr2eManager is null.");
             // Set UI to a default disconnected state
             binding.tvDeviceInfo.setText(R.string.no_device_connected_manager_is_null);
-            animateProgressBar(0f);
-            binding.batteryPercentLabel.setVisibility(View.INVISIBLE);
+            animateProgressBar(0);
             binding.batteryPercentLabel.setText("0%");
             binding.tvStatus.setText(R.string.disconnected);
             binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
@@ -470,7 +468,6 @@ public class HomeFragment extends Fragment {
             StringBuilder info = buildDeviceInfoString(currentDeviceInfo);
             animateProgressBar(currentDeviceInfo.getBatteryPercentage());
             binding.batteryPercentLabel.setText(MessageFormat.format("{0}%", currentDeviceInfo.getBatteryPercentage()));
-            binding.batteryPercentLabel.setVisibility(View.VISIBLE);
             binding.tvDeviceInfo.setText(info.toString());
             binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_connected_24);
             if (currentDeviceInfo.isCharging()) {
@@ -484,8 +481,7 @@ public class HomeFragment extends Fragment {
             binding.stepsCountLabel.setText(String.format(Locale.ENGLISH, "%d", currentDeviceInfo.getSteps()));
         } else {
             binding.tvDeviceInfo.setText(R.string.no_device_connected);
-            animateProgressBar(0f);
-            binding.batteryPercentLabel.setVisibility(View.INVISIBLE);
+            animateProgressBar(0);
             binding.batteryPercentLabel.setText("0%");
             binding.tvStatus.setText(R.string.disconnected);
             binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
@@ -522,11 +518,14 @@ public class HomeFragment extends Fragment {
         return info;
     }
 
-    private void animateProgressBar(float toProgress) {
-        ObjectAnimator animation = ObjectAnimator.ofFloat(binding.watchBatteryProgress, getString(R.string.progress), toProgress);
-        animation.setDuration(1000); // 1 second
-        animation.setInterpolator(new AccelerateDecelerateInterpolator());
-        animation.start();
+    private void animateProgressBar(int toProgress) {
+        requireActivity().runOnUiThread(() -> {
+            ObjectAnimator animation = ObjectAnimator.ofInt(binding.sideBatteryProgressBar, getString(R.string.progress), toProgress);
+            animation.setDuration(1000); // 1 second
+            animation.setInterpolator(new AccelerateDecelerateInterpolator());
+            animation.start();
+        });
+
     }
 
     private void initFindPhoneTone() {
