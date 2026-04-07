@@ -10,13 +10,13 @@ retrofit = "3.0.0"
 converterGson = "3.0.0"
 loggingInterceptor = "5.3.2"
 lombok = "1.18.44"
-jacksonDatabind = "3.1.0"
+jacksonDatabind = "3.1.1"
 jacksonAnnotations = "2.21"
 fragment = "1.8.9"
 navigationFragment = "2.9.7"
 navigationUI = "2.9.7"
-preference = "1.2.0"
-glide = "4.16.0"
+preference = "1.2.1"
+glide = "5.0.5"
 
 
 [libraries]
@@ -33,7 +33,6 @@ lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" 
 jacksonDatabind = { group = "tools.jackson.core", name = "jackson-databind", version.ref = "jacksonDatabind" }
 jacksonAnnotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jacksonAnnotations" }
 fragment = { group = "androidx.fragment", name = "fragment", version.ref = "fragment" }
-#navigationFragment = { group = "androidx.navigation", name = "navigation-fragment", version.ref = "navigationFragment" }
 navigationUI = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUI" }
 navigationFragment = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragment" }
 preference = { group = "androidx.preference", name = "preference", version.ref = "preference" }
