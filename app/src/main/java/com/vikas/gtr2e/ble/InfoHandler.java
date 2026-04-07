@@ -8,7 +8,9 @@ import com.vikas.gtr2e.beans.HuamiBatteryInfo;
 import com.vikas.gtr2e.enums.MusicControl;
 import com.vikas.gtr2e.interfaces.ConnectionCallback;
 import com.vikas.gtr2e.services.GTR2eBleService;
-import com.vikas.gtr2e.utils.GTR2eWatchFaceUtil;
+import com.vikas.gtr2e.utils.Prefs;
+import com.vikas.gtr2e.watchFeatureUtilities.GTR2eChargeAnalyzer;
+import com.vikas.gtr2e.watchFeatureUtilities.GTR2eWatchFaceUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
@@ -32,13 +34,7 @@ public class InfoHandler {
         final UUID characteristicUUID = characteristic.getUuid();
 
         if (HuamiService.UUID_CHARACTERISTIC_6_BATTERY_INFO.equals(characteristicUUID)) {
-            Log.i(TAG, "HANDLING BATTERY INFO");
-            HuamiBatteryInfo batteryInfo = HuamiBatteryInfo.parseBatteryResponse(value);
-            if (batteryInfo != null) {
-                deviceInfo.updateBatteryInfo(batteryInfo);
-                if (connectionCallback != null)
-                    connectionCallback.onBatteryDataReceived(batteryInfo);
-            }
+            handleBatteryAndCharging(value, connectionCallback, bleService, deviceInfo);
         } else if (HuamiService.UUID_CHARACTERISTIC_REALTIME_STEPS.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING REALTIME STEPS INFO");
             handleRealtimeSteps(value, deviceInfo, connectionCallback);
@@ -94,6 +90,41 @@ public class InfoHandler {
                         new String(value, StandardCharsets.UTF_8), Arrays.toString(value)
                 ));
                 handleDeviceInfo(value,BleNamesResolver.resolveCharacteristicName(characteristicUUID.toString()), connectionCallback, bleService, deviceInfo);
+            }
+        }
+    }
+
+    private static void handleBatteryAndCharging(byte[] value, ConnectionCallback connectionCallback, GTR2eBleService bleService, DeviceInfo deviceInfo) {
+        Log.i(TAG, "HANDLING BATTERY INFO");
+        HuamiBatteryInfo batteryInfo = HuamiBatteryInfo.parseBatteryResponse(value);
+        if (batteryInfo != null) {
+            GTR2eChargeAnalyzer.Result chargeAnalysis = null;
+            if(bleService !=null) {
+                if(deviceInfo.isCharging() != batteryInfo.isCharging()) {
+                    bleService.chargeAnalyzer.onChargingStateChanged(batteryInfo.isCharging());
+                    Log.e("BATTERY_EST", "CHARGING_CHANGED = " + batteryInfo.isCharging());
+                }
+                if(deviceInfo.getBatteryPercentage() != batteryInfo.getLevelInPercent()) {
+                    bleService.chargeAnalyzer.addBatterySample(batteryInfo.getLevelInPercent());
+                    Log.e("BATTERY_EST", "CHARGING_%_CHANGED = " + batteryInfo.getLevelInPercent());
+                }
+                chargeAnalysis = bleService.chargeAnalyzer.analyze();
+                if(batteryInfo.getLevelInPercent()>95) {
+                    Log.e("BATTERY_EST", "CURRENT_CHARGE_RATE = " + chargeAnalysis.rate);
+                    if(chargeAnalysis.rate!= -1) {
+                        Prefs.setHistoricalChargeRate(bleService.getApplicationContext(), chargeAnalysis.rate);
+                        Log.e("BATTERY_EST", "SAVED_HIST_CHARGE_RATE = " + chargeAnalysis.rate);
+                    }
+                }
+                long etaMillis = chargeAnalysis.etaMillis;
+                if (etaMillis > 0) {
+                    batteryInfo.etaChargeMinutes = etaMillis / 60000;
+                    Log.e("BATTERY_EST", "CURRENT_CHARGE_ETA = " + batteryInfo.etaChargeMinutes + " Minutes");
+                }
+            }
+            deviceInfo.updateBatteryInfo(batteryInfo, chargeAnalysis);
+            if (connectionCallback != null) {
+                connectionCallback.onBatteryDataReceived(batteryInfo);
             }
         }
     }

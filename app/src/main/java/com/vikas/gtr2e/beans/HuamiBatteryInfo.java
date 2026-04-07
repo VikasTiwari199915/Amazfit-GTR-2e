@@ -20,6 +20,7 @@ public class HuamiBatteryInfo {
     
     public static final byte DEVICE_BATTERY_NORMAL = 0;
     public static final byte DEVICE_BATTERY_CHARGING = 1;
+    public long etaChargeMinutes = -1;
     
     private final byte[] data;
     

@@ -21,12 +21,10 @@ public class ConversionUtil {
     }
     public static byte dayOfWeekToRawBytes(Calendar cal) {
         int calValue = cal.get(Calendar.DAY_OF_WEEK);
-        switch (calValue) {
-            case Calendar.SUNDAY:
-                return 7;
-            default:
-                return (byte) (calValue - 1);
+        if (calValue == Calendar.SUNDAY) {
+            return 7;
         }
+        return (byte) (calValue - 1);
     }
     public static GregorianCalendar createCalendar() {
         return new GregorianCalendar();

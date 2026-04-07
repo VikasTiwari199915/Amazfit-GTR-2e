@@ -1,4 +1,4 @@
-package com.vikas.gtr2e.utils;
+package com.vikas.gtr2e.watchFeatureUtilities;
 
 /**
  * Provides icon ids for icons on GTR 2e device

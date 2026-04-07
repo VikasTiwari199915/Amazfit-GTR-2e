@@ -454,6 +454,7 @@ public class HomeFragment extends Fragment {
             binding.batteryPercentLabel.setText("0%");
             binding.tvStatus.setText(R.string.disconnected);
             binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
+            binding.sideBatteryInfoLabel.setVisibility(View.INVISIBLE);
             binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_24);
             binding.continuousHeartRateSwitch.setChecked(false);
             binding.continuousHeartRateSwitch.setEnabled(false);
@@ -468,12 +469,22 @@ public class HomeFragment extends Fragment {
             StringBuilder info = buildDeviceInfoString(currentDeviceInfo);
             animateProgressBar(currentDeviceInfo.getBatteryPercentage());
             binding.batteryPercentLabel.setText(MessageFormat.format("{0}%", currentDeviceInfo.getBatteryPercentage()));
+            if(currentDeviceInfo.getChargeAnalysisResult()!=null) {
+                binding.sideBatteryInfoLabel.setText(MessageFormat.format(
+                        "Full charge in ~{0} Min\nRate : {1}%/min,\nPhase : {2}\nConfidence : {3}",
+                        currentDeviceInfo.getEtaChargeMinutes(), currentDeviceInfo.getChargeAnalysisResult().rate,
+                        currentDeviceInfo.getChargeAnalysisResult().phase.name(), currentDeviceInfo.getChargeAnalysisResult().confidence));
+            } else {
+                binding.sideBatteryInfoLabel.setText(MessageFormat.format("Full charge in ~{0} Min", currentDeviceInfo.getEtaChargeMinutes()));
+            }
             binding.tvDeviceInfo.setText(info.toString());
             binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_connected_24);
             if (currentDeviceInfo.isCharging()) {
                 binding.chargingIndicatorImgView.setVisibility(View.VISIBLE);
+                binding.sideBatteryInfoLabel.setVisibility(View.VISIBLE);
             } else {
                 binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
+                binding.sideBatteryInfoLabel.setVisibility(View.VISIBLE);
             }
             binding.continuousHeartRateSwitch.setEnabled(true);
             binding.findWatchButton.setEnabled(true);
@@ -485,6 +496,7 @@ public class HomeFragment extends Fragment {
             binding.batteryPercentLabel.setText("0%");
             binding.tvStatus.setText(R.string.disconnected);
             binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
+            binding.sideBatteryInfoLabel.setVisibility(View.INVISIBLE);
             binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_24);
             binding.continuousHeartRateSwitch.setChecked(false);
             binding.continuousHeartRateSwitch.setEnabled(false);

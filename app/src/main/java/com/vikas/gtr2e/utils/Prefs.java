@@ -149,4 +149,11 @@ public class Prefs {
         return getPrefs(context).getInt(LAST_SELECTED_WATCHFACE_ID, -1);
     }
 
+    public static void setHistoricalChargeRate(Context context, float currentRate) {
+        getPrefs(context).edit().putFloat("HISTORICAL_CHARGE_RATE", currentRate).apply();
+    }
+
+    public static float getHistoricalChargeRate(Context context) {
+       return getPrefs(context).getFloat("HISTORICAL_CHARGE_RATE", -1);
+    }
 }

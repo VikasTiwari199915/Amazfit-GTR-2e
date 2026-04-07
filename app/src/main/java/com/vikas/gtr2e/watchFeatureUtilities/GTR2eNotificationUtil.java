@@ -1,10 +1,10 @@
-package com.vikas.gtr2e.utils;
+package com.vikas.gtr2e.watchFeatureUtilities;
 
 import android.util.Log;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.vikas.gtr2e.enums.AlertCategory;
+import com.vikas.gtr2e.utils.StringUtils;
 
 import java.util.HashMap;
 

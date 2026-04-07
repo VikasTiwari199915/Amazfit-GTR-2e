@@ -47,8 +47,9 @@ import com.vikas.gtr2e.enums.CallStatus;
 import com.vikas.gtr2e.enums.MusicControl;
 import com.vikas.gtr2e.interfaces.ConnectionCallback;
 import com.vikas.gtr2e.utils.ConversionUtil;
-import com.vikas.gtr2e.utils.GTR2eNotificationUtil;
-import com.vikas.gtr2e.utils.GTR2eWatchFaceUtil;
+import com.vikas.gtr2e.watchFeatureUtilities.GTR2eChargeAnalyzer;
+import com.vikas.gtr2e.watchFeatureUtilities.GTR2eNotificationUtil;
+import com.vikas.gtr2e.watchFeatureUtilities.GTR2eWatchFaceUtil;
 import com.vikas.gtr2e.utils.MediaUtil;
 import com.vikas.gtr2e.utils.NotificationUtility;
 import com.vikas.gtr2e.utils.Prefs;
@@ -115,6 +116,7 @@ public class GTR2eBleService extends Service {
     private BluetoothGattCharacteristic characteristicChunked2021Read;
     Huami2021Handler huami2021Handler = (type, payload) -> handleChunkedRead(payload);
     private int mMTU = MIN_MTU;
+    public GTR2eChargeAnalyzer chargeAnalyzer = new GTR2eChargeAnalyzer();
 
     private boolean isBleBusy = false;
 
@@ -149,7 +151,7 @@ public class GTR2eBleService extends Service {
                     Log.d(TAG, "Disconnected from GATT server");
                     deviceInfo.setConnected(false);
                     deviceInfo.setAuthenticated(false);
-                    deviceInfo.updateBatteryInfo(null);
+                    deviceInfo.updateBatteryInfo(null, null);
                     if (connectionCallback != null) {
                         connectionCallback.onDeviceDisconnected();
                     }
@@ -163,7 +165,7 @@ public class GTR2eBleService extends Service {
                 Log.e(TAG, "Connection state change failed: " + status);
                 deviceInfo.setConnected(false);
                 deviceInfo.setAuthenticated(false);
-                deviceInfo.updateBatteryInfo(null);
+                deviceInfo.updateBatteryInfo(null, null);
                 if (connectionCallback != null) {
                     connectionCallback.onError("Connection failed: " + status);
                 }
@@ -386,7 +388,7 @@ public class GTR2eBleService extends Service {
         }
         deviceInfo.setAuthenticated(false);
         deviceInfo.setConnected(false);
-        deviceInfo.updateBatteryInfo(null);
+        deviceInfo.updateBatteryInfo(null, null);
 
         updateConnectionState();
         if (connectionCallback != null) {
@@ -1010,7 +1012,7 @@ public class GTR2eBleService extends Service {
                 }
                 Log.d("MEDIA", "Metadata changed");
                 MusicBean newMetaData = MediaUtil.extractMusicBean(metadata);
-                if(!MediaUtil.bufferMusicBean.equals(newMetaData)) {
+                if(newMetaData!=null && !MediaUtil.bufferMusicBean.equals(newMetaData)) {
                     MediaUtil.bufferMusicBean = MediaUtil.extractMusicBean(metadata);
                     sendMusicStateToDevice(MediaUtil.bufferMusicBean, MediaUtil.bufferMusicStateBean);
                 }

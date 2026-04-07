@@ -9,7 +9,7 @@ import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
 import com.vikas.gtr2e.GTR2eApp;
-import com.vikas.gtr2e.utils.GTR2eNotificationUtil;
+import com.vikas.gtr2e.watchFeatureUtilities.GTR2eNotificationUtil;
 import com.vikas.gtr2e.utils.Prefs;
 
 /**

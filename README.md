@@ -2,6 +2,9 @@
 
 A privacy-focused, open-source Android companion app for the Amazfit GTR 2e smartwatch, enabling seamless data synchronization and advanced device management.
 
+![GitHub License](https://img.shields.io/github/license/VikasTiwari199915/Amazfit-GTR-2e)
+
+
 ## Overview
 
 GTR 2e Companion provides a robust alternative to official applications for managing the Amazfit GTR 2e. By implementing the Huami Bluetooth Low Energy (BLE) protocol, the app offers core synchronization and control features with a commitment to simplicity, performance, and user privacy.

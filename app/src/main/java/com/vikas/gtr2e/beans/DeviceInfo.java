@@ -1,5 +1,7 @@
 package com.vikas.gtr2e.beans;
 
+import com.vikas.gtr2e.watchFeatureUtilities.GTR2eChargeAnalyzer;
+
 import lombok.Data;
 
 /**
@@ -26,18 +28,25 @@ public class DeviceInfo {
     boolean authenticated;
     boolean connected;
     boolean forceDisconnected;
+    long etaChargeMinutes;
+    GTR2eChargeAnalyzer.Result chargeAnalysisResult;
 
-    public void updateBatteryInfo(HuamiBatteryInfo batteryInfo) {
+    public void updateBatteryInfo(HuamiBatteryInfo batteryInfo, GTR2eChargeAnalyzer.Result chargeAnalysisResult) {
         if(batteryInfo!=null) {
             this.batteryPercentage = batteryInfo.getLevelInPercent();
             this.chargingStatus = batteryInfo.isCharging() ? "Charging" : "Not Charging";
             this.batteryStatus = batteryInfo.getStateString();
             this.charging = batteryInfo.isCharging();
+            this.etaChargeMinutes = batteryInfo.etaChargeMinutes;
         } else {
             this.batteryStatus = "N/A";
             this.batteryPercentage = 0;
             this.chargingStatus = "N/A";
             this.charging = false;
+            this.etaChargeMinutes = -1;
+        }
+        if(chargeAnalysisResult!=null) {
+            this.chargeAnalysisResult = chargeAnalysisResult;
         }
     }
 
