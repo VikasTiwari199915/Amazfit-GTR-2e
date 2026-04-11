@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <color name="chart_3_color_1">#419BF0</color> <!-- charging -->
+    <color name="chart_3_color_2">#4CAF50</color> <!-- discharging -->
+
+    <style name="Chart3Line1Style">
+        <item name="color">@color/chart_3_color_1</item>
+        <item name="thickness">2dp</item>
+    </style>
+    <style name="Chart3Line2Style">
+        <item name="color">@color/chart_3_color_2</item>
+        <item name="thickness">2dp</item>
+    </style>
+
+    <style name="Chart3LineLayerStyle">
+        <item name="line1Style">@style/Chart3Line1Style</item>
+        <item name="line2Style">@style/Chart3Line2Style</item>
+        <item name="line3Style">@style/Chart3Line1Style</item>
+    </style>
+</resources>

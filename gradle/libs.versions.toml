@@ -17,6 +17,10 @@ navigationFragment = "2.9.7"
 navigationUI = "2.9.7"
 preference = "1.2.1"
 glide = "5.0.5"
+room = "2.8.4"
+roomAnnotationProcessor = "2.8.4"
+vico = "2.0.0-beta.1"
+aaChart = "8.2.1"
 
 
 [libraries]
@@ -37,6 +41,11 @@ navigationUI = { group = "androidx.navigation", name = "navigation-ui-ktx", vers
 navigationFragment = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragment" }
 preference = { group = "androidx.preference", name = "preference", version.ref = "preference" }
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
+room = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+roomAnnotationProcessor = { group = "androidx.room", name = "room-compiler", version.ref = "roomAnnotationProcessor" }
+aaChart = { group = "com.github.AAChartModel", name = "AAChartCore-Kotlin", version.ref = "aaChart" }
+vico-core = { group = "com.patrykandpatrick.vico", name = "core", version.ref = "vico" }
+vico-views = { group = "com.patrykandpatrick.vico", name = "views", version.ref = "vico" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

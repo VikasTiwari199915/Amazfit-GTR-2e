@@ -20,6 +20,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -334,8 +335,10 @@ public class HomeFragment extends Fragment {
         gtr2eManager.onMainActivityResumed();
         updateDeviceInfo();
         if (deviceAddedJustNow) {
-            connectToDevice();
-            deviceAddedJustNow = false;
+            new Handler(requireActivity().getMainLooper()).postDelayed(() -> {
+                connectToDevice();
+                deviceAddedJustNow = false;
+            }, 1500);
         }
     }
 
@@ -469,13 +472,13 @@ public class HomeFragment extends Fragment {
             StringBuilder info = buildDeviceInfoString(currentDeviceInfo);
             animateProgressBar(currentDeviceInfo.getBatteryPercentage());
             binding.batteryPercentLabel.setText(MessageFormat.format("{0}%", currentDeviceInfo.getBatteryPercentage()));
-            if(currentDeviceInfo.getChargeAnalysisResult()!=null) {
+            if(currentDeviceInfo.getChargeAnalysisResult()!=null && currentDeviceInfo.getChargeAnalysisResult().etaMillis > 0) {
                 binding.sideBatteryInfoLabel.setText(MessageFormat.format(
                         "Full charge in ~{0} Min\nRate : {1}%/min,\nPhase : {2}\nConfidence : {3}",
                         currentDeviceInfo.getEtaChargeMinutes(), currentDeviceInfo.getChargeAnalysisResult().rate,
                         currentDeviceInfo.getChargeAnalysisResult().phase.name(), currentDeviceInfo.getChargeAnalysisResult().confidence));
             } else {
-                binding.sideBatteryInfoLabel.setText(MessageFormat.format("Full charge in ~{0} Min", currentDeviceInfo.getEtaChargeMinutes()));
+                binding.sideBatteryInfoLabel.setText("Analyzing battery charge info");
             }
             binding.tvDeviceInfo.setText(info.toString());
             binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_connected_24);
@@ -484,7 +487,7 @@ public class HomeFragment extends Fragment {
                 binding.sideBatteryInfoLabel.setVisibility(View.VISIBLE);
             } else {
                 binding.chargingIndicatorImgView.setVisibility(View.INVISIBLE);
-                binding.sideBatteryInfoLabel.setVisibility(View.VISIBLE);
+                binding.sideBatteryInfoLabel.setVisibility(View.INVISIBLE);
             }
             binding.continuousHeartRateSwitch.setEnabled(true);
             binding.findWatchButton.setEnabled(true);

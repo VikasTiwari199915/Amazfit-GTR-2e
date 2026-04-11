@@ -87,6 +87,7 @@ public class GTR2eManager {
 //                bleService.setTime();
 //                bleService.requestWatchFaceIdList();
                 bleService.testNotifications("", "","");
+                break;
             default:
                 break;
         }

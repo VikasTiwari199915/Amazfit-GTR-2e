@@ -1,10 +1,13 @@
 package com.vikas.gtr2e.ble;
 
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.content.Context;
 import android.util.Log;
 
 import com.vikas.gtr2e.beans.DeviceInfo;
 import com.vikas.gtr2e.beans.HuamiBatteryInfo;
+import com.vikas.gtr2e.db.AppDatabase;
+import com.vikas.gtr2e.db.entities.BatterySampleEntity;
 import com.vikas.gtr2e.enums.MusicControl;
 import com.vikas.gtr2e.interfaces.ConnectionCallback;
 import com.vikas.gtr2e.services.GTR2eBleService;
@@ -107,6 +110,7 @@ public class InfoHandler {
                 if(deviceInfo.getBatteryPercentage() != batteryInfo.getLevelInPercent()) {
                     bleService.chargeAnalyzer.addBatterySample(batteryInfo.getLevelInPercent());
                     Log.e("BATTERY_EST", "CHARGING_%_CHANGED = " + batteryInfo.getLevelInPercent());
+                    logBatterySampleInDb(batteryInfo.getLevelInPercent(), batteryInfo.isCharging(), bleService.getApplicationContext());
                 }
                 chargeAnalysis = bleService.chargeAnalyzer.analyze();
                 if(batteryInfo.getLevelInPercent()>95) {
@@ -126,6 +130,18 @@ public class InfoHandler {
             if (connectionCallback != null) {
                 connectionCallback.onBatteryDataReceived(batteryInfo);
             }
+        }
+    }
+
+    private static void logBatterySampleInDb(int levelInPercent, boolean charging, Context applicationContext) {
+        try {
+            new Thread(() -> {
+                AppDatabase db = AppDatabase.getInstance(applicationContext);
+                db.batterySampleDao().insert(new BatterySampleEntity(System.currentTimeMillis(), levelInPercent, charging));
+                Log.e(TAG, "Logged battery sample in db");
+            }).start();
+        } catch (Exception e) {
+            Log.e(TAG, "Error in logging battery sample in db", e);
         }
     }
 

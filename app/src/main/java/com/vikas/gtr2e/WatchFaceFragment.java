@@ -164,11 +164,6 @@ public class WatchFaceFragment extends Fragment {
                             saveWatchFaces(installedWatchFaces);
                             adapter.notifyDataSetChanged();
                             installedWatchFacesLoaded = true;
-
-                            gtr2eManager.performAction("TEST");
-
-                            // For now, let's assume the first one is selected or we can get currently selected ID if available
-                            // Implementation for selected indicator can be refined later
                         } else {
                             Toast.makeText(getContext(), "Failed to fetch watch face details", Toast.LENGTH_SHORT).show();
                             if (response.code() == 401) {
