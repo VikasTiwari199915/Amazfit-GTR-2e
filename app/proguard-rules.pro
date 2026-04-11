@@ -20,7 +20,4 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--dontwarn com.vikas.gtr2e.reference.**
--keep class com.vikas.gtr2e.reference.** { *; }
--dontwarn com.vikas.gtr2e.huami.**
--keep class com.vikas.gtr2e.huami.** { *; }
+-keep class com.github.aachartmodel.aainfographics.** { *; }

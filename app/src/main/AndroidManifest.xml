@@ -55,16 +55,23 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.GTR2eApp">
         <activity
-            android:name=".HomeActivity"
-            android:theme="@style/Theme.GTR2eApp"
+            android:name=".WatchFaceStoreActivity"
             android:configChanges="orientation"
+            android:exported="false"
             android:screenOrientation="portrait"
-            android:exported="false" />
+            android:label="Watch Face Store"
+            android:theme="@style/Theme.GTR2eApp.StoreTheme" />
+        <activity
+            android:name=".HomeActivity"
+            android:configChanges="orientation"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.GTR2eApp" />
         <activity
             android:name=".ZeppLoginActivity"
             android:configChanges="orientation"
-            android:screenOrientation="portrait"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.GTR2eApp">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -75,8 +82,8 @@
         <activity
             android:name=".BluetoothScanActivity"
             android:configChanges="orientation"
-            android:screenOrientation="portrait"
             android:exported="false"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.GTR2eApp" />
 
         <service

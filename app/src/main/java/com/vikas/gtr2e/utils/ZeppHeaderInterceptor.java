@@ -9,7 +9,6 @@ import java.util.UUID;
 
 import okhttp3.Interceptor;
 import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class ZeppHeaderInterceptor implements Interceptor {
@@ -28,7 +27,7 @@ public class ZeppHeaderInterceptor implements Interceptor {
                 .header("callid", String.valueOf(System.currentTimeMillis()))
                 .header("X-Request-Id", UUID.randomUUID().toString())
                 .header("lang", "en_US")
-                .header("appplatform", "android_phone")
+                .header("appplatform", "ios_phone")
                 .header("country", Prefs.getZeppCountryCode(context))
                 .header("User-Agent", "Zepp/10.1.1 (Android)")
                 .header("appname", "com.huami.midong")

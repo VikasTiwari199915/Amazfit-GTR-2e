@@ -31,9 +31,7 @@ import java.util.UUID;
 public class InfoHandler {
     public static final String TAG = "InfoHandler";
 
-    public static void onInfoReceived(BluetoothGattCharacteristic characteristic, byte[] value,
-                                      ConnectionCallback connectionCallback, GTR2eBleService bleService,
-                                      DeviceInfo deviceInfo) {
+    public static void onInfoReceived(BluetoothGattCharacteristic characteristic, byte[] value, ConnectionCallback connectionCallback, GTR2eBleService bleService, DeviceInfo deviceInfo) {
         final UUID characteristicUUID = characteristic.getUuid();
 
         if (HuamiService.UUID_CHARACTERISTIC_6_BATTERY_INFO.equals(characteristicUUID)) {
@@ -58,11 +56,9 @@ public class InfoHandler {
         } else if (HuamiService.UUID_CHARACTERISTIC_AUTH.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING AUTHENTICATION INFO :: " + Arrays.toString(value));
             Log.i(TAG, "AUTHENTICATION?? " + characteristicUUID);
-//            logMessageContent(value);
         } else if (HuamiService.UUID_CHARACTERISTIC_DEVICEEVENT.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING DEVICE EVENT INFO :: " + Arrays.toString(value));
             handleDeviceEvent(value, connectionCallback, bleService, deviceInfo);
-            // onOperationComplete is typically called by specific event handlers if needed or at end of this block
         } else if (HuamiService.UUID_CHARACTERISTIC_WORKOUT.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING WORKOUT INFO :: " + Arrays.toString(value));
 //            handleDeviceWorkoutEvent(value);
@@ -110,7 +106,7 @@ public class InfoHandler {
                 if(deviceInfo.getBatteryPercentage() != batteryInfo.getLevelInPercent()) {
                     bleService.chargeAnalyzer.addBatterySample(batteryInfo.getLevelInPercent());
                     Log.e("BATTERY_EST", "CHARGING_%_CHANGED = " + batteryInfo.getLevelInPercent());
-                    logBatterySampleInDb(batteryInfo.getLevelInPercent(), batteryInfo.isCharging(), bleService.getApplicationContext());
+                    bleService.logBatterySampleInDb(batteryInfo.getLevelInPercent(), batteryInfo.isCharging(), bleService.getApplicationContext());
                 }
                 chargeAnalysis = bleService.chargeAnalyzer.analyze();
                 if(batteryInfo.getLevelInPercent()>95) {
@@ -133,17 +129,7 @@ public class InfoHandler {
         }
     }
 
-    private static void logBatterySampleInDb(int levelInPercent, boolean charging, Context applicationContext) {
-        try {
-            new Thread(() -> {
-                AppDatabase db = AppDatabase.getInstance(applicationContext);
-                db.batterySampleDao().insert(new BatterySampleEntity(System.currentTimeMillis(), levelInPercent, charging));
-                Log.e(TAG, "Logged battery sample in db");
-            }).start();
-        } catch (Exception e) {
-            Log.e(TAG, "Error in logging battery sample in db", e);
-        }
-    }
+
 
     private static void handleDeviceInfo(byte[] value, String characteristicName, ConnectionCallback connectionCallback, GTR2eBleService bleService, DeviceInfo deviceInfo) {
         switch (characteristicName){

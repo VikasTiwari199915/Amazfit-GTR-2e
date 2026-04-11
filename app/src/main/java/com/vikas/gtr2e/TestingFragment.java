@@ -29,14 +29,19 @@ import com.vikas.gtr2e.databinding.FragmentTestingBinding;
 import com.vikas.gtr2e.db.AppDatabase;
 import com.vikas.gtr2e.db.entities.BatterySampleEntity;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class TestingFragment extends Fragment {
 
+    public static final String TAG = "CHART";
+    public static final String RGBA_GREEN = "rgba(76,175,80,0.3)";
+    public static final String RGBA_BLUE = "rgba(33,150,243,0.3)";
     FragmentTestingBinding binding;
 
     public TestingFragment() { }
@@ -63,12 +68,17 @@ public class TestingFragment extends Fragment {
     }
 
     private void convertDbDataToAAChart(List<BatterySampleEntity> samples) {
+        // Get the difference between UTC and your local time
+        long localOffset = TimeZone.getDefault().getOffset(System.currentTimeMillis());
+
         if (samples == null || samples.isEmpty()) return;
 
         samples.sort(Comparator.comparingLong(s -> s.timestamp));
 
         long now = System.currentTimeMillis();
-        long start24h = now - (24 * 60 * 60 * 1000);
+        long start24h = (now - (24 * 60 * 60 * 1000)) + localOffset;
+        long currentLocalTime = now + localOffset;
+
         long gapThreshold = 15 * 60 * 1000; // 15 min
 
         String colorCharging = "#4CAF50";    // Green
@@ -80,54 +90,54 @@ public class TestingFragment extends Fragment {
         boolean lastState = false;
         boolean isFirstValid = true;
         long lastTimestamp = -1;
+        int lastBatteryPercent = -1;
 
         for (BatterySampleEntity sample : samples) {
-            if (sample.timestamp < start24h) continue;
+            long localTimestamp = sample.timestamp + localOffset;
+            if (localTimestamp < start24h) continue;
 
-            Log.e("CHART", "Sample included: " + sample.batteryPercent + " -> "+sample.isCharging);
+            Log.e(TAG, "Sample included: " + sample.batteryPercent + ", isCharging -> "+sample.isCharging + ", time : "+localTimestamp);
+
             // Init first valid state
             if (isFirstValid) {
                 lastState = sample.isCharging;
                 isFirstValid = false;
-
-                zonesList.add(new AAZonesElement().color(lastState ? colorCharging : colorDischarging)
-                        .fillColor(lastState ? "rgba(76,175,80,0.3)" : "rgba(33,150,243,0.3)"));
             }
 
-            // 🔥 GAP: break line completely
-            if (lastTimestamp != -1 && (sample.timestamp - lastTimestamp) > gapThreshold) {
-                dataList.add(new Object[]{(double) (sample.timestamp - 1), null});
+            // GAP: break line completely
+            if (lastTimestamp != -1
+                    && lastBatteryPercent!=-1
+                    && !(lastBatteryPercent == sample.batteryPercent || lastBatteryPercent+1 == sample.batteryPercent || lastBatteryPercent -1 == sample.batteryPercent)
+                    && ((localTimestamp - lastTimestamp) > gapThreshold)) {
+                dataList.add(new Object[]{(double) (localTimestamp - 1), null});
             }
 
             // Add actual point
-            dataList.add(new Object[]{
-                    (double) sample.timestamp,
-                    (double) sample.batteryPercent
-            });
+            dataList.add(new Object[]{(double) localTimestamp, (double) sample.batteryPercent});
 
-            // 🔥 Zone transition (charging ↔ discharging)
+            // Zone transition (charging ↔ discharging)
             if (sample.isCharging != lastState) {
+                Log.e(TAG, "Adding new zone as charging = "+sample.isCharging);
                 zonesList.add(new AAZonesElement()
-                        .value((double) sample.timestamp)
-                        .color(sample.isCharging ? colorCharging : colorDischarging)
-                        .fillColor(sample.isCharging
-                                ? "rgba(76,175,80,0.3)"
-                                : "rgba(33,150,243,0.3)")
+                        .value((double) localTimestamp)
+                        .color(lastState ? colorCharging : colorDischarging)
+                        .fillColor(lastState ? RGBA_GREEN : RGBA_BLUE)
                 );
                 lastState = sample.isCharging;
             }
-
-            lastTimestamp = sample.timestamp;
+            lastTimestamp = localTimestamp;
+            lastBatteryPercent = sample.batteryPercent;
         }
 
         // Final zone
-        zonesList.add(new AAZonesElement().color(lastState ? colorCharging : colorDischarging).fillColor(lastState ? "rgba(76,175,80,0.3)" : "rgba(33,150,243,0.3)"));
+        Log.e(TAG, "Adding final zone, lastState of charging :" +lastState);
+        zonesList.add(new AAZonesElement().color(lastState ? colorCharging : colorDischarging).fillColor(lastState ? RGBA_GREEN : RGBA_BLUE));
 
-        Log.e("CHART", "Data size: " + dataList.size());
-        Log.e("CHART", "Zones size: " + zonesList.size());
+        Log.e(TAG, "Data size: " + dataList.size());
+        Log.e(TAG, "Zones size: " + zonesList.size());
 
         if (dataList.size() < 2) {
-            Log.e("CHART", "Not enough data to render chart");
+            Log.e(TAG, "Not enough data to render chart");
             return;
         }
 
@@ -158,17 +168,17 @@ public class TestingFragment extends Fragment {
 
         AAOptions aaOptions = AAOptionsConstructor.INSTANCE.configureChartOptions(aaChartModel);
 
-        AALabels xAxislabels = new AALabels()
-                .format("{value:%H}").style(new AAStyle().color(textColor).fontSize(10f));
+        AALabels xAxislabels = new AALabels().format("{value:%H}")
+                .style(new AAStyle().color(textColor).fontSize(10f));
 
         AALabels yAxislabels = new AALabels().style(new AAStyle().color(textColor).fontSize(10f));
 
-        // 🔥 X Axis (time)
+        // X Axis (time)
         if (aaOptions.getXAxis() != null) {
             aaOptions.getXAxis()
                     .type(AAChartAxisType.Datetime)
                     .min((double) start24h)
-                    .max((double) now)
+                    .max((double) currentLocalTime)
                     .labels(xAxislabels)
                     .tickColor(textColor)
                     .lineColor(textColor)
@@ -200,7 +210,6 @@ public class TestingFragment extends Fragment {
 
         return String.format("#%06X", (0xFFFFFF & color));
     }
-
 
 
 }

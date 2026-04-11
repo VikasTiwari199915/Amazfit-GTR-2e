@@ -30,10 +30,7 @@ import lombok.Getter;
  */
 public class GTR2eManager {
     private static final String TAG = "GTR2eManager";
-    private final MutableLiveData<GTR2eBleService> serviceLiveData = new MutableLiveData<>();
-    public LiveData<GTR2eBleService> getServiceLiveData() {
-        return serviceLiveData;
-    }
+
     @Getter
     public GTR2eBleService bleService;
     private ConnectionListener connectionListener;
@@ -95,7 +92,7 @@ public class GTR2eManager {
 
 
     private GTR2eManager(Context context) {
-        this.applicationContext = context.getApplicationContext(); // Ensure it's application context
+        this.applicationContext = context.getApplicationContext();
         startAndBindService();
     }
 

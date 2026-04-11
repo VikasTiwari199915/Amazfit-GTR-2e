@@ -63,6 +63,9 @@ public class WatchFaceFragment extends Fragment {
         watchFaceListRequested = false;
         initRecyclerView();
         initGTR2eManager();
+        binding.floatingActionButton.setOnClickListener(v->{
+            startActivity(new Intent(requireActivity(), WatchFaceStoreActivity.class));
+        });
     }
 
     private void initRecyclerView() {

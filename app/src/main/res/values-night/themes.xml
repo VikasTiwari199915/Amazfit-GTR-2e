@@ -17,6 +17,24 @@
 
         <item name="preferenceTheme">@style/MyStyle.Preference.v21</item>
     </style>
+
+    <style name="Theme.GTR2eApp.StoreTheme" parent="Theme.Material3.DynamicColors.Dark">
+        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondaryVariant">@color/teal_700</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <item name="android:statusBarColor" >?attr/colorPrimaryVariant</item>
+        <!-- Customize your theme here. -->
+
+        <item name="colorPrimary">@color/material_dynamic_primary70</item>
+        <item name="colorAccent">@color/material_dynamic_primary70</item>
+        <item name="colorSecondary">@color/material_dynamic_primary50</item>
+        <item name="colorTertiary">@color/material_dynamic_secondary30</item>
+        <item name="colorError">#FFB4AB</item>
+        <item name="colorErrorContainer">#93000A</item>
+
+        <item name="preferenceTheme">@style/MyStyle.Preference.v21</item>
+    </style>
     <style name="Theme.BottomNavigationView.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
         <item name="android:color">?attr/colorTertiary</item>
     </style>

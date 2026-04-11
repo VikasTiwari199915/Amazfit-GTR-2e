@@ -1,11 +1,11 @@
 <resources>
     <string name="app_name">GTR 2e</string>
-    <string name="login_starting">Starting login process...</string>
-    <string name="getting_tokens">Getting authentication tokens...</string>
+    <string name="login_starting">Starting login process…</string>
+    <string name="getting_tokens">Getting authentication tokens…</string>
     <string name="login_failed_tokens">Failed to get tokens. Check credentials.</string>
-    <string name="logging_in_zepp">Logging in to Zepp...</string>
+    <string name="logging_in_zepp">Logging in to Zepp…</string>
     <string name="login_failed">Login failed.</string>
-    <string name="fetching_devices">Fetching devices...</string>
+    <string name="fetching_devices">Fetching devices…</string>
     <string name="login_success_devices">Login successful! Found %1$d devices.</string>
     <string name="login_success_no_devices">Login successful, but failed to fetch devices.</string>
     <string name="error_message">Error: %1$s</string>
@@ -14,7 +14,7 @@
     <string name="no_device_connected_manager_is_null">No device connected (manager null)</string>
     <string name="disconnected">Disconnected</string>
     <string name="no_device_connected">No device connected</string>
-    <string name="searching_for_devices">Searching for devices...</string>
+    <string name="searching_for_devices">Searching for devices…</string>
     <string name="bluetooth_not_supported">Bluetooth not supported</string>
     <string name="search_failed_or_cancelled">Search failed or cancelled</string>
     <string name="device_selected">Device selected</string>
@@ -22,7 +22,8 @@
     <string name="connect">Connect</string>
     <string name="connected_to_gtr_2e">Connected to GTR 2e</string>
     <string name="disconnect">Disconnect</string>
-    <string name="finding_phone">Finding Phone...</string>
+    <string name="notification_quit_service">Quit service</string>
+    <string name="finding_phone">Finding Phone…</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <!-- Preference Titles -->
@@ -45,4 +46,15 @@
     <string name="login_successful_but_no_devices_found">Login successful, but no devices found.</string>
     <string name="watch_face_preview">Watch Face Preview</string>
     <string name="selected">Selected</string>
+    <string name="watch_face_store_title">Watch face store</string>
+    <string name="watch_face_store_category_fallback">Category %1$d</string>
+    <string name="error_store_login_required">Sign in with your Zepp account to browse the watch face store.</string>
+    <string name="error_store_load_failed">Could not load the watch face store. Try again later.</string>
+    <string name="error_store_load_failed_detail">Could not load the watch face store: %1$s</string>
+    <string name="empty_store_categories">No watch faces to show.</string>
+    <string name="watch_face_store_section_new">New</string>
+    <string name="watch_face_store_ranking_total">Top charts</string>
+    <string name="watch_face_store_ranking_week">Trending this week</string>
+    <string name="watch_face_store_ranking_format">Ranking: %1$s</string>
+    <string name="watch_face_store_ranking_unknown">Rankings</string>
 </resources>

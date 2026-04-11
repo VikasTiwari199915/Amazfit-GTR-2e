@@ -6,14 +6,18 @@ import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
+import android.content.Intent;
 import android.service.notification.StatusBarNotification;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.vikas.gtr2e.HomeActivity;
 import com.vikas.gtr2e.R;
+import com.vikas.gtr2e.services.GTR2eBleService;
 
 /**
  * Utility class for notifications
@@ -46,7 +50,23 @@ public class NotificationUtility {
     }
 
     public static Notification createNotification(Context context, boolean isConnected) {
-        return new NotificationCompat.Builder(context, CHANNEL_ID)
+        Intent homeIntent = new Intent(context, HomeActivity.class);
+        homeIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent contentPendingIntent = PendingIntent.getActivity(
+                context,
+                0,
+                homeIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        Intent quitIntent = new Intent(context, GTR2eBleService.class);
+        quitIntent.setAction(GTR2eBleService.ACTION_NOTIFICATION_QUIT);
+        PendingIntent quitPendingIntent = PendingIntent.getService(
+                context,
+                3,
+                quitIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setContentTitle("GTR 2e Service")
                 .setContentText(isConnected ?
                         "Connected to Amazfit GTR 2e" : "Device disconnected")
@@ -56,8 +76,30 @@ public class NotificationUtility {
                 .setAutoCancel(false)
                 .setShowWhen(false)
                 .setCategory(NotificationCompat.CATEGORY_STATUS)
-                //.addAction(createDisconnectAction())
-                .build();
+                .setContentIntent(contentPendingIntent);
+
+        if (isConnected) {
+            Intent disconnectIntent = new Intent(context, GTR2eBleService.class);
+            disconnectIntent.setAction(GTR2eBleService.ACTION_NOTIFICATION_DISCONNECT);
+            PendingIntent disconnectPendingIntent = PendingIntent.getService(
+                    context,
+                    2,
+                    disconnectIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            builder.addAction(0, context.getString(R.string.disconnect), disconnectPendingIntent);
+        } else {
+            Intent connectIntent = new Intent(context, GTR2eBleService.class);
+            connectIntent.setAction(GTR2eBleService.ACTION_NOTIFICATION_CONNECT);
+            PendingIntent connectPendingIntent = PendingIntent.getService(
+                    context,
+                    1,
+                    connectIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            builder.addAction(0, context.getString(R.string.connect), connectPendingIntent);
+        }
+
+        builder.addAction(0, context.getString(R.string.notification_quit_service), quitPendingIntent);
+        return builder.build();
     }
 
     public static void createNotificationChannel(Context context) {

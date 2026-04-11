@@ -1,6 +1,6 @@
 package com.vikas.gtr2e.beans.ZeppCloudBeans;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
 
@@ -9,7 +9,7 @@ import lombok.Data;
 @Data
 public class StoreResponse {
     private int total;
-    @JsonProperty("new")
+    @SerializedName("new")
     private ArrayList<WatchfaceItem> newItems;
     private int new_count;
     private ArrayList<Ranking> ranking;

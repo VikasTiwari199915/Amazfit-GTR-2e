@@ -43,6 +43,8 @@ import com.vikas.gtr2e.ble.Huami2021ChunkedEncoder;
 import com.vikas.gtr2e.ble.Huami2021Handler;
 import com.vikas.gtr2e.ble.HuamiService;
 import com.vikas.gtr2e.ble.InfoHandler;
+import com.vikas.gtr2e.db.AppDatabase;
+import com.vikas.gtr2e.db.entities.BatterySampleEntity;
 import com.vikas.gtr2e.enums.CallStatus;
 import com.vikas.gtr2e.enums.MusicControl;
 import com.vikas.gtr2e.interfaces.ConnectionCallback;
@@ -75,6 +77,10 @@ import lombok.Setter;
  */
 @SuppressLint("MissingPermission")
 public class GTR2eBleService extends Service {
+
+    public static final String ACTION_NOTIFICATION_CONNECT = "com.vikas.gtr2e.action.NOTIFICATION_CONNECT";
+    public static final String ACTION_NOTIFICATION_DISCONNECT = "com.vikas.gtr2e.action.NOTIFICATION_DISCONNECT";
+    public static final String ACTION_NOTIFICATION_QUIT = "com.vikas.gtr2e.action.NOTIFICATION_QUIT";
 
     // UUIDs for Huami protocol
     public static final UUID AUTH_SERVICE_UUID = UUID.fromString("0000fee1-0000-1000-8000-00805f9b34fb");
@@ -119,6 +125,8 @@ public class GTR2eBleService extends Service {
     public GTR2eChargeAnalyzer chargeAnalyzer = new GTR2eChargeAnalyzer();
 
     private boolean isBleBusy = false;
+
+    private boolean isCommittingSucide = false;
 
 
     //watch status
@@ -302,15 +310,18 @@ public class GTR2eBleService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "Service created");
+        Log.e(TAG, "### Service created ###");
         this.context = getApplicationContext();
         initializeBluetooth();
         NotificationUtility.createNotificationChannel(context);
         NotificationUtility.startAsForegroundService(GTR2eBleService.this, deviceInfo.isConnected());
-        deviceInfo.setDeviceName("Amazfit GTR 2e");
+//        deviceInfo.setDeviceName("Amazfit GTR 2e");
         if (Prefs.getDeviceAdded(context)) {
             registerDevicePresence();
             registerVolumeListener();
+            if(!deviceInfo.isConnected()) {
+                connect();
+            }
         }
     }
 
@@ -325,7 +336,27 @@ public class GTR2eBleService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "Service started");
+        if (intent != null && intent.getAction() != null) {
+            switch (intent.getAction()) {
+                case ACTION_NOTIFICATION_CONNECT:
+                    Log.d(TAG, "Notification action: connect");
+                    connect();
+                    break;
+                case ACTION_NOTIFICATION_DISCONNECT:
+                    Log.d(TAG, "Notification action: disconnect");
+                    disconnect();
+                    break;
+                case ACTION_NOTIFICATION_QUIT:
+                    Log.d(TAG, "Notification action: quit service");
+                    stopForeground(Service.STOP_FOREGROUND_REMOVE);
+                    stopSelf();
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            Log.d(TAG, "Service started");
+        }
         return START_STICKY;
     }
 
@@ -909,12 +940,40 @@ public class GTR2eBleService extends Service {
     }
 
     public void updateConnectionState() {
-        NotificationUtility.updateNotification(context, deviceInfo.isConnected(), GTR2eBleService.this);
+        if(!isCommittingSucide) {
+            NotificationUtility.updateNotification(context, deviceInfo.isConnected(), GTR2eBleService.this);
+        }
     }
 
     @Override
     public void onTaskRemoved(Intent rootIntent) {
         super.onTaskRemoved(rootIntent);
+        if (!Prefs.getKeepServiceRunningInBG(getApplicationContext())) {
+            isCommittingSucide = true;
+            Log.e(TAG, "Task removed from recents; keep-in-background disabled — stopping BLE service");
+            //Log current battery status if connected
+            if(deviceInfo.isConnected() && deviceInfo.isAuthenticated()) {
+                logBatterySampleInDb(deviceInfo.getBatteryPercentage(), deviceInfo.isCharging(), context);
+            }
+            connectionCallback = null;
+            disconnect();
+            stopForeground(Service.STOP_FOREGROUND_REMOVE);
+            stopSelf();
+        } else {
+            Log.e(TAG, "Keeping service running in the BG");
+        }
+    }
+
+    public void logBatterySampleInDb(int levelInPercent, boolean charging, Context applicationContext) {
+        try {
+            new Thread(() -> {
+                AppDatabase db = AppDatabase.getInstance(applicationContext);
+                db.batterySampleDao().insert(new BatterySampleEntity(System.currentTimeMillis(), levelInPercent, charging));
+                Log.e(TAG, "Logged battery sample in db");
+            }).start();
+        } catch (Exception e) {
+            Log.e(TAG, "Error in logging battery sample in db", e);
+        }
     }
 
     private void registerDevicePresence() {
