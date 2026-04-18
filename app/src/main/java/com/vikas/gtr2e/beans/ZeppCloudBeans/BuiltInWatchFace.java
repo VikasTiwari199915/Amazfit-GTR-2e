@@ -1,9 +1,10 @@
 package com.vikas.gtr2e.beans.ZeppCloudBeans;
 
 import lombok.Data;
+import java.io.Serializable;
 
 @Data
-public class BuiltInWatchFace {
+public class BuiltInWatchFace implements Serializable {
     private int id;
     private String name;
     private int builtin_id;

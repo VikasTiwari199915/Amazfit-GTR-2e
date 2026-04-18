@@ -4,10 +4,12 @@ import static android.app.Activity.RESULT_OK;
 
 import android.Manifest;
 import android.animation.ObjectAnimator;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.app.NotificationManager;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -32,6 +34,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresPermission;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
@@ -417,15 +420,28 @@ public class HomeFragment extends Fragment {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private void connectToDevice() {
-        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(getContext(), "Bluetooth permission not granted", Toast.LENGTH_SHORT).show();
-                return;
+        //Don't need Bluetooth or location for already bonded device
+//        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
+//            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+//            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+//                Toast.makeText(getContext(), "Bluetooth permission not granted", Toast.LENGTH_SHORT).show();
+//                return;
+//            }
+//            bluetoothLauncher.launch(enableBtIntent);
+//            return;
+//        }
+
+        String lastMac = Prefs.getLastDeviceMac(requireContext());
+        if (lastMac != null && bluetoothAdapter != null) {
+            BluetoothDevice targetDevice = bluetoothAdapter.getRemoteDevice(lastMac);
+            if (targetDevice != null) {
+                Log.d(TAG, "Connecting to: " + targetDevice.getAddress());
+                if (targetDevice.getBondState() == BluetoothDevice.BOND_NONE) {
+                    targetDevice.createBond();
+                }
             }
-            bluetoothLauncher.launch(enableBtIntent);
-            return;
         }
 
         if (gtr2eManager == null) {
@@ -443,7 +459,7 @@ public class HomeFragment extends Fragment {
             if (gtr2eManager.getDeviceInfo() != null) {
                 gtr2eManager.getDeviceInfo().setForceDisconnected(false);
             }
-            gtr2eManager.startScan();
+            gtr2eManager.connectWithBondedDevice();
         }
     }
 
@@ -477,7 +493,7 @@ public class HomeFragment extends Fragment {
                         currentDeviceInfo.getEtaChargeMinutes(), currentDeviceInfo.getChargeAnalysisResult().rate,
                         currentDeviceInfo.getChargeAnalysisResult().phase.name(), currentDeviceInfo.getChargeAnalysisResult().confidence));
             } else {
-                binding.sideBatteryInfoLabel.setText("Analyzing battery charge info");
+                binding.sideBatteryInfoLabel.setText(R.string.analyzing_battery_charge_info);
             }
             binding.tvDeviceInfo.setText(info.toString());
             binding.blutoothStatusIndicatorImgView.setImageResource(R.drawable.rounded_bluetooth_connected_24);

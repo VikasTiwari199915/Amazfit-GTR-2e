@@ -33,7 +33,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.vikas.gtr2e.databinding.ActivityBluetoothScanBinding;
 import com.vikas.gtr2e.utils.Prefs;
 
-public class BluetoothScanActivity extends AppCompatActivity {
+public class DeviceBondingActivity extends AppCompatActivity {
 
     private static final String TAG = "BluetoothScanActivity";
     private static final int REQUEST_PERMISSION_CODE = 101;

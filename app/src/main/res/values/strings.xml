@@ -57,4 +57,6 @@
     <string name="watch_face_store_ranking_week">Trending this week</string>
     <string name="watch_face_store_ranking_format">Ranking: %1$s</string>
     <string name="watch_face_store_ranking_unknown">Rankings</string>
+    <string name="renew_session">Renew Session</string>
+    <string name="analyzing_battery_charge_info">Analyzing battery charge info</string>
 </resources>

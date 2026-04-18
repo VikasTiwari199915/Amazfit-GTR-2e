@@ -2,6 +2,7 @@ package com.vikas.gtr2e.apiInterfaces;
 
 import com.vikas.gtr2e.beans.ZeppCloudBeans.BuiltInWatchFace;
 import com.vikas.gtr2e.beans.ZeppCloudBeans.FamilyMemberResponse;
+import com.vikas.gtr2e.beans.ZeppCloudBeans.PageableWatchFaceStoreResponse;
 import com.vikas.gtr2e.beans.ZeppCloudBeans.StoreResponse;
 import com.vikas.gtr2e.beans.zeppAuthBeans.ZeppLoginResponse;
 
@@ -38,6 +39,13 @@ public interface ZeppApiService {
     @GET("market/devices/209/watch/builtin")
     Call<List<BuiltInWatchFace>> getBuiltinWatchfaces(
             @Query("builtin_ids") String builtinIds,
+            @Query("userid") String userId
+    );
+
+    @GET("market/devices/209/watch")
+    Call<PageableWatchFaceStoreResponse> getPageableWatchFaces(
+            @Query("page") String page,
+            @Query("per_page") String perPage,
             @Query("userid") String userId
     );
 

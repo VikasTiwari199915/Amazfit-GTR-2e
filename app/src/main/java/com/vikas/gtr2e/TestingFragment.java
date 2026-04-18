@@ -28,6 +28,8 @@ import com.github.aachartmodel.aainfographics.aaoptionsmodel.AAZonesElement;
 import com.vikas.gtr2e.databinding.FragmentTestingBinding;
 import com.vikas.gtr2e.db.AppDatabase;
 import com.vikas.gtr2e.db.entities.BatterySampleEntity;
+import com.vikas.gtr2e.utils.GTR2eManager;
+import com.vikas.gtr2e.watchFeatureUtilities.GTR2eFirmwareUtil;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -64,7 +66,6 @@ public class TestingFragment extends Fragment {
             });
         }
 
-
     }
 
     private void convertDbDataToAAChart(List<BatterySampleEntity> samples) {
@@ -76,10 +77,10 @@ public class TestingFragment extends Fragment {
         samples.sort(Comparator.comparingLong(s -> s.timestamp));
 
         long now = System.currentTimeMillis();
-        long start24h = (now - (24 * 60 * 60 * 1000)) + localOffset;
+        long start7Days = (now - (7 * 24 * 60 * 60 * 1000)) + localOffset;
         long currentLocalTime = now + localOffset;
 
-        long gapThreshold = 15 * 60 * 1000; // 15 min
+        long gapThreshold = 30 * 60 * 1000; // 30 min
 
         String colorCharging = "#4CAF50";    // Green
         String colorDischarging = "#2196F3"; // Blue
@@ -94,7 +95,7 @@ public class TestingFragment extends Fragment {
 
         for (BatterySampleEntity sample : samples) {
             long localTimestamp = sample.timestamp + localOffset;
-            if (localTimestamp < start24h) continue;
+            if (localTimestamp < start7Days) continue;
 
             Log.e(TAG, "Sample included: " + sample.batteryPercent + ", isCharging -> "+sample.isCharging + ", time : "+localTimestamp);
 
@@ -168,7 +169,7 @@ public class TestingFragment extends Fragment {
 
         AAOptions aaOptions = AAOptionsConstructor.INSTANCE.configureChartOptions(aaChartModel);
 
-        AALabels xAxislabels = new AALabels().format("{value:%H}")
+        AALabels xAxislabels = new AALabels().format("{value:%d %b}")
                 .style(new AAStyle().color(textColor).fontSize(10f));
 
         AALabels yAxislabels = new AALabels().style(new AAStyle().color(textColor).fontSize(10f));
@@ -177,13 +178,13 @@ public class TestingFragment extends Fragment {
         if (aaOptions.getXAxis() != null) {
             aaOptions.getXAxis()
                     .type(AAChartAxisType.Datetime)
-                    .min((double) start24h)
+                    .min((double) start7Days)
                     .max((double) currentLocalTime)
                     .labels(xAxislabels)
                     .tickColor(textColor)
                     .lineColor(textColor)
                     .tickWidth(1)
-                    .tickInterval((double) (3 * 60 * 60 * 1000));
+                    .tickInterval((double) (24 * 60 * 60 * 1000));
         }
 
         if(aaOptions.getYAxis() != null) {

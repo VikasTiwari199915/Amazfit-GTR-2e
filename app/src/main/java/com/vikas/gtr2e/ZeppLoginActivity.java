@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -14,12 +13,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.button.MaterialButton;
-import com.google.android.material.progressindicator.CircularProgressIndicator;
-import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
 import com.vikas.gtr2e.beans.zeppAuthBeans.ZeppDeviceItem;
 import com.vikas.gtr2e.beans.zeppAuthBeans.ZeppDevicesResponse;
 import com.vikas.gtr2e.beans.zeppAuthBeans.ZeppLoginResponse;
@@ -66,7 +60,7 @@ public class ZeppLoginActivity extends AppCompatActivity {
             binding.method2TextLabel.setVisibility(View.GONE);
             binding.method1TextLabel.setText("Your app token has been revoked. Please login again.\nThis might have happened if you logged in to zepp account somewhere else.");
             binding.authKeyLayout.setVisibility(View.GONE);
-            binding.loginButton.setText("Renew Session");
+            binding.loginButton.setText(R.string.renew_session);
         }
 
 
@@ -107,7 +101,7 @@ public class ZeppLoginActivity extends AppCompatActivity {
             // Auto login with auth key
             Prefs.setAuthKey(getApplicationContext(), authKey);
             Prefs.setZeppAccountLogin(getApplicationContext(), false);
-            Intent intent = new Intent(this, BluetoothScanActivity.class);
+            Intent intent = new Intent(this, DeviceBondingActivity.class);
             startActivity(intent);
             finish();
         }
@@ -244,7 +238,7 @@ public class ZeppLoginActivity extends AppCompatActivity {
                 Toast.makeText(this, "Device details saved. Opening scan...", Toast.LENGTH_SHORT).show();
 
                 // Open Bluetooth Scan Activity
-                Intent intent = new Intent(this, BluetoothScanActivity.class);
+                Intent intent = new Intent(this, DeviceBondingActivity.class);
                 startActivity(intent);
                 finish();
             } else {

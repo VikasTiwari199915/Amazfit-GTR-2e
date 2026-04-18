@@ -82,4 +82,10 @@ public class GTR2eWatchFaceUtil {
 
         return (msb << 8) | lsb;
     }
+
+    //delete watch face command
+    //Value: 00C2 003F 0167 0000 00
+    //watch response
+    //Handle Value Notification - Handle:0x0047 - Value: 1000 C201 0100 00
+
 }

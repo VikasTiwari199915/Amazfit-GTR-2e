@@ -63,9 +63,7 @@ public class WatchFaceFragment extends Fragment {
         watchFaceListRequested = false;
         initRecyclerView();
         initGTR2eManager();
-        binding.floatingActionButton.setOnClickListener(v->{
-            startActivity(new Intent(requireActivity(), WatchFaceStoreActivity.class));
-        });
+        binding.floatingActionButton.setOnClickListener(v-> startActivity(new Intent(requireActivity(), WatchFaceStoreActivity.class)));
     }
 
     private void initRecyclerView() {
@@ -135,7 +133,9 @@ public class WatchFaceFragment extends Fragment {
                     @Override
                     public void onResponse(@NonNull Call<List<BuiltInWatchFace>> call, @NonNull Response<List<BuiltInWatchFace>> response) {
                         fetchingWatchFaceDetails = false;
-                        binding.progressBar.setVisibility(View.GONE);
+                        if(binding != null) {
+                            binding.progressBar.setVisibility(View.GONE);
+                        }
                         if (response.isSuccessful() && response.body() != null) {
                             watchFaceList.clear();
                             List<BuiltInWatchFace> installedWatchFaces = new ArrayList<>();
@@ -193,7 +193,9 @@ public class WatchFaceFragment extends Fragment {
                     @Override
                     public void onFailure(@NonNull Call<List<BuiltInWatchFace>> call, @NonNull Throwable t) {
                         fetchingWatchFaceDetails = false;
-                        binding.progressBar.setVisibility(View.GONE);
+                        if(binding!=null) {
+                            binding.progressBar.setVisibility(View.GONE);
+                        }
                         Log.e(TAG, "API Failure: " + t.getMessage());
                         Toast.makeText(getContext(), "API Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                     }

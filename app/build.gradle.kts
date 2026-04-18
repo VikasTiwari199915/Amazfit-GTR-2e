@@ -19,7 +19,7 @@ android {
         minSdk = 31
         targetSdk = 36
         versionCode = 1
-        versionName = "1.1.5"
+        versionName = "1.1.6"
     }
 
     buildTypes {
@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.vico.views)
     implementation(libs.aaChart)
     implementation(libs.glide)
+    implementation(libs.apacheCommonsLang3)
     annotationProcessor(libs.glide)
     implementation(libs.room)
     annotationProcessor(libs.roomAnnotationProcessor)

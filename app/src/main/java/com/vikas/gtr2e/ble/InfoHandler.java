@@ -15,6 +15,8 @@ import com.vikas.gtr2e.utils.Prefs;
 import com.vikas.gtr2e.watchFeatureUtilities.GTR2eChargeAnalyzer;
 import com.vikas.gtr2e.watchFeatureUtilities.GTR2eWatchFaceUtil;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.Arrays;
@@ -67,7 +69,7 @@ public class InfoHandler {
             handleRealtimeSteps(value, deviceInfo, connectionCallback);
         } else if (HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING CONFIGURATION INFO :: " + Arrays.toString(value));
-            handleConfigurationInfo(value, connectionCallback);
+            handleConfigurationInfo(value, connectionCallback, bleService);
         } else if (HuamiService.UUID_CHARACTERISTIC_CHUNKEDTRANSFER_2021_READ.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING CHUNKED TRANSFER INFO :: " + Arrays.toString(value));
             Log.e(TAG, "CHUNKED TRANSFER INFO String Value :: " + new String(value));
@@ -81,6 +83,13 @@ public class InfoHandler {
         } else if (HuamiService.UUID_CHARACTERISTIC_5_ACTIVITY_CONTROL.equals(characteristicUUID)) {
             Log.i(TAG, "HANDLING ACTIVITY CONTROL INFO :: " + Arrays.toString(value));
 //            fetcher.onActivityControl(value);
+        } else if(HuamiService.UUID_CHARACTERISTIC_FIRMWARE_CONTROL.equals(characteristicUUID)) {
+            //FW/Watchface update
+            if(bleService!=null && bleService.getFwUtil()!=null) {
+                bleService.getFwUtil().handleFirmwareRelatedNotifications(value, bleService, bleService.getFwUtil());
+            } else {
+                Log.e(TAG, "FW/Watchface update not handled as Utility instance was not set in LE Service");
+            }
         } else {
             Log.i(TAG, "HANDLING UNHANDLED INFO for characteristic: " + characteristicUUID);
             if (BleNamesResolver.mCharacteristics.containsKey(characteristicUUID.toString())) {
@@ -171,7 +180,7 @@ public class InfoHandler {
     // Status codes
     private static final byte STATUS_SUCCESS = 0x01;
 
-    private static void handleConfigurationInfo(byte[] value, ConnectionCallback connectionCallback) {
+    private static void handleConfigurationInfo(byte[] value, ConnectionCallback connectionCallback, @NotNull GTR2eBleService bleService) {
         if (value == null || value.length < 2) {
             Log.e(TAG, "Packet too short : " + Arrays.toString(value));
             return;
@@ -186,6 +195,13 @@ public class InfoHandler {
                 case SUB_WATCHFACE:
                     handleWatchfaceResponse(value, connectionCallback);
                     break;
+                case (byte) 0x39:
+                    //FW/Watchface update
+                    if(bleService.getFwUtil() != null) {
+                        bleService.getFwUtil().handleFirmwareRelatedNotifications(value, bleService, bleService.getFwUtil());
+                    } else {
+                        Log.e(TAG, "FW/Watchface update not handled as Utility instance was not set in LE Service");
+                    }
                 default:
                     Log.e(TAG, "Unknown subcommand : " + Arrays.toString(value));
             }

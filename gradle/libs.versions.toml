@@ -21,6 +21,7 @@ room = "2.8.4"
 roomAnnotationProcessor = "2.8.4"
 vico = "2.0.0-beta.1"
 aaChart = "8.2.1"
+apacheCommonsLang3 = "3.20.0"
 
 
 [libraries]
@@ -46,6 +47,7 @@ roomAnnotationProcessor = { group = "androidx.room", name = "room-compiler", ver
 aaChart = { group = "com.github.AAChartModel", name = "AAChartCore-Kotlin", version.ref = "aaChart" }
 vico-core = { group = "com.patrykandpatrick.vico", name = "core", version.ref = "vico" }
 vico-views = { group = "com.patrykandpatrick.vico", name = "views", version.ref = "vico" }
+apacheCommonsLang3 = {group = 'org.apache.commons', name = 'commons-lang3', version.ref = 'apacheCommonsLang3'}
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

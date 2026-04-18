@@ -4,6 +4,7 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -20,10 +21,22 @@ import java.util.List;
 public class WatchFaceStoreSectionAdapter extends RecyclerView.Adapter<WatchFaceStoreSectionAdapter.SectionVH> {
 
     private List<WatchFaceStoreSection> sections = new ArrayList<>();
+    private StoreWatchfaceItemAdapter.OnItemClickListener itemClickListener;
 
     public void submitSections(List<WatchFaceStoreSection> sections) {
         this.sections = sections != null ? new ArrayList<>(sections) : new ArrayList<>();
         notifyDataSetChanged();
+    }
+
+    public void addSection(WatchFaceStoreSection section) {
+        if (section != null) {
+            this.sections.add(section);
+            notifyItemInserted(sections.size() - 1);
+        }
+    }
+
+    public void setOnItemClickListener(StoreWatchfaceItemAdapter.OnItemClickListener listener) {
+        this.itemClickListener = listener;
     }
 
     @NonNull
@@ -40,9 +53,16 @@ public class WatchFaceStoreSectionAdapter extends RecyclerView.Adapter<WatchFace
         holder.binding.categoryTitle.setText(section.title);
 
         List<WatchfaceItem> data = section.items;
-        StoreWatchfaceItemAdapter inner = new StoreWatchfaceItemAdapter(data);
-        holder.binding.watchFacesRecyclerView.setLayoutManager(
-                new LinearLayoutManager(holder.binding.getRoot().getContext(), LinearLayoutManager.HORIZONTAL, false));
+        StoreWatchfaceItemAdapter inner = new StoreWatchfaceItemAdapter(data, itemClickListener);
+        
+        if ("All Watch Faces".equals(section.title)) {
+            holder.binding.watchFacesRecyclerView.setLayoutManager(
+                    new GridLayoutManager(holder.binding.getRoot().getContext(), 3));
+        } else {
+            holder.binding.watchFacesRecyclerView.setLayoutManager(
+                    new LinearLayoutManager(holder.binding.getRoot().getContext(), LinearLayoutManager.HORIZONTAL, false));
+        }
+
         holder.binding.watchFacesRecyclerView.setAdapter(inner);
         holder.binding.watchFacesRecyclerView.setNestedScrollingEnabled(false);
         holder.binding.watchFacesRecyclerView.setHasFixedSize(true);

@@ -21,9 +21,15 @@ import java.util.List;
 public class StoreWatchfaceItemAdapter extends RecyclerView.Adapter<StoreWatchfaceItemAdapter.VH> {
 
     private final List<WatchfaceItem> items;
+    private final OnItemClickListener listener;
 
-    public StoreWatchfaceItemAdapter(List<WatchfaceItem> items) {
+    public interface OnItemClickListener {
+        void onItemClick(WatchfaceItem item);
+    }
+
+    public StoreWatchfaceItemAdapter(List<WatchfaceItem> items, OnItemClickListener listener) {
         this.items = items != null ? items : Collections.emptyList();
+        this.listener = listener;
     }
 
     @NonNull
@@ -43,6 +49,12 @@ public class StoreWatchfaceItemAdapter extends RecyclerView.Adapter<StoreWatchfa
                 .fallback(R.drawable.rounded_question_mark_24)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(holder.binding.imagePreview);
+
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onItemClick(item);
+            }
+        });
     }
 
     @Override

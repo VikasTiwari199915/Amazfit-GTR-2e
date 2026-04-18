@@ -9,9 +9,6 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.util.Log;
 
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
-
 import com.vikas.gtr2e.GTR2eApp;
 import com.vikas.gtr2e.beans.DeviceInfo;
 import com.vikas.gtr2e.beans.HuamiBatteryInfo;
@@ -213,7 +210,7 @@ public class GTR2eManager {
         }
     }
 
-    public void startScan() {
+    public void connectWithBondedDevice() {
         if (bleService == null || !bound) {
              Log.e(TAG, "BLE Service not available for scan");
              if (connectionListener != null) connectionListener.onError("Service not ready for scan");
@@ -286,6 +283,8 @@ public class GTR2eManager {
                     if (deviceInfo.isAuthenticated()) {
                         connectionListener.onAuthenticated();
                     }
+                } else {
+                    connectWithBondedDevice();
                 }
             }
         }

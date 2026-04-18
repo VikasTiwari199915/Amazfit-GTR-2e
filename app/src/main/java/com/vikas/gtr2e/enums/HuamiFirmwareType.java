@@ -1,0 +1,47 @@
+/*  Copyright (C) 2017-2021 Andreas Shimokawa, Carsten Pfeiffer
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
+package com.vikas.gtr2e.enums;
+
+public enum HuamiFirmwareType {
+    FIRMWARE((byte) 0),
+    CHANGELOG_TXT((byte) 16),
+    // MB7 firmwares are sent as UIHH packing FIRMWARE (zip) + CHANGELOG_TXT, type 0xfd
+    FIRMWARE_UIHH_2021_ZIP_WITH_CHANGELOG((byte) -3),
+    FONT((byte) 1),
+    RES((byte) 2),
+    RES_COMPRESSED((byte) 130),
+    GPS((byte) 3),
+    GPS_CEP((byte) 4),
+    AGPS_UIHH((byte) -4),
+    GPS_ALMANAC((byte) 5),
+    WATCHFACE((byte) 8),
+    APP((byte) 8),
+    FONT_LATIN((byte) 11),
+    ZEPPOS_UNKNOWN_0X13((byte) 0x13),
+    ZEPPOS_APP((byte) 0xa0),
+    INVALID(Byte.MIN_VALUE);
+
+    private final byte value;
+
+    HuamiFirmwareType(byte value) {
+        this.value = value;
+    }
+
+    public byte getValue() {
+        return value;
+    }
+}
